@@ -32,6 +32,38 @@ variable "adf_name" {
   default     = "adf-dataeng-pipeline"
 }
 
+# Azure Data Factory - GitHub Integration
+variable "adf_github_account_name" {
+  description = "GitHub account name for ADF integration"
+  type        = string
+  default     = "vikneshwara-r-b"
+}
+
+variable "adf_github_repository_name" {
+  description = "GitHub repository name for ADF"
+  type        = string
+  default     = "adf-practice-usecases"
+}
+
+variable "adf_github_branch_name" {
+  description = "GitHub branch name for ADF collaboration"
+  type        = string
+  default     = "main"
+}
+
+variable "adf_github_root_folder" {
+  description = "Root folder in repository for ADF artifacts"
+  type        = string
+  default     = "/"
+}
+
+# Azure Key Vault
+variable "key_vault_name" {
+  description = "Name of the Azure Key Vault (will be appended with suffix)"
+  type        = string
+  default     = "kv-dataeng"
+}
+
 # Storage Account (ADLS Gen2)
 variable "storage_account_name" {
   description = "Name of the ADLS Gen2 storage account (must be globally unique, lowercase, no hyphens, will be appended with suffix)"
