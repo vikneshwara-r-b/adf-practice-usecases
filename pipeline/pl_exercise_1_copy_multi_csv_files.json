@@ -1,0 +1,207 @@
+{
+	"name": "pl_exercise_1_copy_multi_csv_files",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Metadata of Source ADLS Container",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_source_csv_copy_files",
+						"type": "DatasetReference",
+						"parameters": {
+							"adls_source_url": {
+								"value": "@pipeline().globalParameters.adls_source_url",
+								"type": "Expression"
+							},
+							"key_vault_url": {
+								"value": "@pipeline().globalParameters.key_vault_url",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobStorageReadSettings",
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "Iterate CSV files",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Filter CSV files",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Filter CSV files').output.Value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Append CSV file name",
+							"type": "AppendVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "valid_files",
+								"value": {
+									"value": "@item().name",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Copy Each CSV file",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Append CSV file name",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "PreserveHierarchy"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_source_csv_file",
+									"type": "DatasetReference",
+									"parameters": {
+										"FileName": {
+											"value": "@item().name",
+											"type": "Expression"
+										},
+										"adls_source_url": {
+											"value": "@pipeline().globalParameters.adls_source_url",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_target_csv_file",
+									"type": "DatasetReference",
+									"parameters": {
+										"adls_source_url": {
+											"value": "@pipeline().globalParameters.adls_source_url",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "Filter CSV files",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "Get Metadata of Source ADLS Container",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Metadata of Source ADLS Container').output.childItems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@contains(item().name,'.csv')",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"variables": {
+			"valid_files": {
+				"type": "Array"
+			}
+		},
+		"folder": {
+			"name": "Exercises"
+		},
+		"annotations": []
+	}
+}
