@@ -322,4 +322,46 @@ resource "azurerm_key_vault_secret" "sql_target_admin_password" {
   ]
 }
 
+# ============================================================================
+# Azure Data Factory - Global Parameters
+# ============================================================================
+
+# NOTE: The AzureRM provider does not currently support creating global parameters via Terraform.
+# Global parameters must be created manually in ADF Studio after deployment.
+#
+# To create global parameters in ADF Studio:
+# 1. Open ADF Studio (use the URL from terraform outputs)
+# 2. Go to Manage → Global parameters
+# 3. Click "+ New" and add the following parameters:
+#
+# Parameter: adls_source_url
+#   Type: String
+#   Value: https://${azurerm_storage_account.adls.name}.dfs.core.windows.net
+#   Example: https://adlsdepractice20260201.dfs.core.windows.net
+#
+# Parameter: key_vault_url
+#   Type: String
+#   Value: ${azurerm_key_vault.main.vault_uri}
+#   Example: https://kv-dataeng-20260201.vault.azure.net/
+#
+# Parameter: sql_source_server_name
+#   Type: String
+#   Value: ${azurerm_mssql_server.source.fully_qualified_domain_name}
+#   Example: sql-source-dataengpractice-20260201.database.windows.net
+#
+# Parameter: sql_source_database_name
+#   Type: String
+#   Value: sourcedb
+#
+# Parameter: sql_target_server_name
+#   Type: String
+#   Value: ${azurerm_mssql_server.target.fully_qualified_domain_name}
+#   Example: sql-target-dataengpractice-20260201.database.windows.net
+#
+# Parameter: sql_target_database_name
+#   Type: String
+#   Value: targetdb
+#
+# The actual values will be available in terraform outputs after deployment.
+
 
