@@ -143,3 +143,31 @@ output "adf_data_factory_url" {
   description = "URL to access Azure Data Factory Studio"
   value       = "https://adf.azure.com/en-us/home?factory=/subscriptions/${split("/", azurerm_data_factory.main.id)[2]}/resourceGroups/${azurerm_resource_group.main.name}/providers/Microsoft.DataFactory/factories/${azurerm_data_factory.main.name}"
 }
+
+# ============================================================================
+# Azure Key Vault
+# ============================================================================
+
+output "key_vault_name" {
+  description = "Name of the Key Vault"
+  value       = azurerm_key_vault.main.name
+}
+
+output "key_vault_id" {
+  description = "ID of the Key Vault"
+  value       = azurerm_key_vault.main.id
+}
+
+output "key_vault_uri" {
+  description = "URI of the Key Vault"
+  value       = azurerm_key_vault.main.vault_uri
+}
+
+output "key_vault_secrets" {
+  description = "List of secrets stored in Key Vault"
+  value = {
+    adls_storage_account_key  = azurerm_key_vault_secret.adls_storage_account_key.name
+    adls_storage_account_name = azurerm_key_vault_secret.adls_storage_account_name.name
+    adls_connection_string    = azurerm_key_vault_secret.adls_connection_string.name
+  }
+}
