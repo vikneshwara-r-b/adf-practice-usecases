@@ -9,6 +9,10 @@
 			"key_vault_url": {
 				"type": "string",
 				"value": "https://de-practice-kv-20260201.vault.azure.net/"
+			},
+			"sql_source_server_name": {
+				"type": "string",
+				"value": "sql-source-server-20260201.database.windows.net"
 			}
 		}
 	},
