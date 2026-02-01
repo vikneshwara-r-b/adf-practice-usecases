@@ -5,6 +5,9 @@
 		"parameters": {
 			"adls_source_url": {
 				"type": "String"
+			},
+			"key_vault_url": {
+				"type": "String"
 			}
 		},
 		"annotations": [],
@@ -17,10 +20,14 @@
 					"referenceName": "ls_kv_connection",
 					"type": "LinkedServiceReference",
 					"parameters": {
-						"key_vault_url": "https://de-practice-kv-20260201.vault.azure.net/"
+						"key_vault_url": {
+							"value": "@linkedService().key_vault_url",
+							"type": "Expression"
+						}
 					}
 				},
-				"secretName": "adls-storage-account-key"
+				"secretName": "adls-storage-account-key",
+				"secretVersion": "e082c6beef2344fb82fd4e93e970dd07"
 			}
 		}
 	}
