@@ -1,0 +1,11 @@
+{
+	"name": "ls_kv_connection",
+	"properties": {
+		"description": "Used to connect with Azure Key Vault service",
+		"annotations": [],
+		"type": "AzureKeyVault",
+		"typeProperties": {
+			"baseUrl": "https://kv-de-practice-20260201.vault.azure.net/"
+		}
+	}
+}
