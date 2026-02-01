@@ -1,0 +1,12 @@
+{
+	"name": "adf-de-pipeline-20260201",
+	"properties": {
+		"globalParameters": {
+			"adls_source_url": {
+				"type": "string",
+				"value": "https://adlsdepractice20260201.dfs.core.windows.net"
+			}
+		}
+	},
+	"location": "eastus"
+}
