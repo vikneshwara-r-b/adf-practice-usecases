@@ -21,6 +21,10 @@
 			"sql_target_server_name": {
 				"type": "string",
 				"value": "sql-target-server-20260201.database.windows.net"
+			},
+			"sql_target_database_name": {
+				"type": "string",
+				"value": "targetdb"
 			}
 		}
 	},
