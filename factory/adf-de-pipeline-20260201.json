@@ -13,6 +13,10 @@
 			"sql_source_server_name": {
 				"type": "string",
 				"value": "sql-source-server-20260201.database.windows.net"
+			},
+			"sql_source_database_name": {
+				"type": "string",
+				"value": "sourcedb"
 			}
 		}
 	},
