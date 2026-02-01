@@ -35,3 +35,5 @@ terraform.rc
 # Ignore any local environment files
 .env
 .env.local
+
+*.plan

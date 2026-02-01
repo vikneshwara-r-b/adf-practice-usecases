@@ -169,5 +169,56 @@ output "key_vault_secrets" {
     adls_storage_account_key  = azurerm_key_vault_secret.adls_storage_account_key.name
     adls_storage_account_name = azurerm_key_vault_secret.adls_storage_account_name.name
     adls_connection_string    = azurerm_key_vault_secret.adls_connection_string.name
+    sql_source_username       = azurerm_key_vault_secret.sql_source_admin_username.name
+    sql_source_password       = azurerm_key_vault_secret.sql_source_admin_password.name
+    sql_target_username       = azurerm_key_vault_secret.sql_target_admin_username.name
+    sql_target_password       = azurerm_key_vault_secret.sql_target_admin_password.name
   }
+}
+
+# ============================================================================
+# ADF Global Parameters (Manual Configuration Required)
+# ============================================================================
+
+output "adf_global_parameters_instructions" {
+  description = "Instructions and values for creating ADF global parameters"
+  value       = <<-EOT
+    ╔════════════════════════════════════════════════════════════════════════╗
+    ║        ADF GLOBAL PARAMETERS - MANUAL CONFIGURATION REQUIRED           ║
+    ╚════════════════════════════════════════════════════════════════════════╝
+    
+    Create the following global parameters in ADF Studio:
+    (Navigate to: Manage → Global parameters → + New)
+    
+    1. adls_source_url
+       Type: String
+       Value: https://${azurerm_storage_account.adls.name}.dfs.core.windows.net
+    
+    2. key_vault_url
+       Type: String
+       Value: ${azurerm_key_vault.main.vault_uri}
+    
+    3. sql_source_server_name
+       Type: String
+       Value: ${azurerm_mssql_server.source.fully_qualified_domain_name}
+    
+    4. sql_source_database_name
+       Type: String
+       Value: ${azurerm_mssql_database.source.name}
+    
+    5. sql_target_server_name
+       Type: String
+       Value: ${azurerm_mssql_server.target.fully_qualified_domain_name}
+    
+    6. sql_target_database_name
+       Type: String
+       Value: ${azurerm_mssql_database.target.name}
+    
+    ═══════════════════════════════════════════════════════════════════════
+    Usage in ADF Pipelines:
+    @pipeline().globalParameters.adls_source_url
+    @pipeline().globalParameters.key_vault_url
+    @pipeline().globalParameters.sql_source_server_name
+    ═══════════════════════════════════════════════════════════════════════
+  EOT
 }
