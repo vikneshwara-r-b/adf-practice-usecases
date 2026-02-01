@@ -1,0 +1,47 @@
+# Example Terraform Variables File
+# Copy this file to terraform.tfvars and update with your values
+# DO NOT commit terraform.tfvars to version control (it contains sensitive information)
+
+# General Configuration
+location            = "eastus"
+resource_suffix     = "001"  # Change this to ensure global uniqueness (e.g., your initials, timestamp, etc.)
+resource_group_name = "rg-data-engineering"
+environment         = "dev"
+
+# Azure Data Factory
+# Final name will be: adf-dataeng-pipeline-001
+adf_name = "adf-dataeng-pipeline"
+
+# Storage Account (ADLS Gen2)
+# Note: Storage account names must be globally unique, lowercase, no hyphens, 3-24 characters
+# Final name will be: adlsdataeng001
+storage_account_name   = "adlsdataeng"
+source_container_name  = "source"
+target_container_name  = "target"
+
+# SQL Server - Source
+# Note: Server names must be globally unique
+# Final name will be: sql-source-dataeng-001
+sql_source_server_name   = "sql-source-dataeng"
+sql_source_admin_login   = "sqladmin"
+sql_source_admin_password = "YourStrongPassword123!"  # Change this!
+sql_source_database_name = "sourcedb"
+
+# SQL Server - Target
+# Final name will be: sql-target-dataeng-001
+sql_target_server_name   = "sql-target-dataeng"
+sql_target_admin_login   = "sqladmin"
+sql_target_admin_password = "YourStrongPassword123!"  # Change this!
+sql_target_database_name = "targetdb"
+
+# SQL Database Configuration
+sql_database_sku        = "Basic"
+sql_database_max_size_gb = 2
+
+# Tags
+tags = {
+  Environment = "dev"
+  ManagedBy   = "Terraform"
+  Project     = "DataEngineering"
+  Owner       = "YourName"
+}
