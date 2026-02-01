@@ -5,6 +5,10 @@
 			"adls_source_url": {
 				"type": "string",
 				"value": "https://adlsdepractice20260201.dfs.core.windows.net"
+			},
+			"key_vault_url": {
+				"type": "string",
+				"value": "https://de-practice-kv-20260201.vault.azure.net/"
 			}
 		}
 	},
