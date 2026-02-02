@@ -1,0 +1,208 @@
+{
+	"name": "pl_copy_oldest_file",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Metadata for ADLS source container",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_source_csv_copy_files",
+						"type": "DatasetReference",
+						"parameters": {
+							"adls_source_url": {
+								"value": "@pipeline().globalParameters.adls_source_url",
+								"type": "Expression"
+							},
+							"key_vault_url": {
+								"value": "@pipeline().globalParameters.key_vault_url",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobStorageReadSettings",
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "Filter for CSV files",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "Get Metadata for ADLS source container",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Metadata for ADLS source container').output.childItems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@contains(item().name, '.csv')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Iterate CSV files",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Filter for CSV files",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Filter for CSV files').output.Value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Get Metadata of Current file",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "ds_source_csv_file",
+									"type": "DatasetReference",
+									"parameters": {
+										"FileName": {
+											"value": "@item().name",
+											"type": "Expression"
+										},
+										"adls_source_url": {
+											"value": "@pipeline().globalParameters.adls_source_url",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										}
+									}
+								},
+								"fieldList": [
+									"lastModified"
+								],
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							}
+						},
+						{
+							"name": "Check current file is old",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "Get Metadata of Current file",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@less(activity('Get Metadata of Current file').output.lastModified, variables('oldest_file_timestamp'))\n",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "Set file name",
+										"type": "SetVariable",
+										"dependsOn": [],
+										"policy": {
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "oldest_csv_filename",
+											"value": {
+												"value": "@item().name",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "Set file timestamp value",
+										"type": "SetVariable",
+										"dependsOn": [
+											{
+												"activity": "Set file name",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "oldest_file_timestamp",
+											"value": {
+												"value": "@activity('Get Metadata of Current file').output.lastModified",
+												"type": "Expression"
+											}
+										}
+									}
+								]
+							}
+						}
+					]
+				}
+			}
+		],
+		"variables": {
+			"oldest_csv_filename": {
+				"type": "String"
+			},
+			"oldest_file_timestamp": {
+				"type": "String",
+				"defaultValue": "2100-01-01T00:00:00Z"
+			}
+		},
+		"folder": {
+			"name": "Exercises"
+		},
+		"annotations": []
+	}
+}
