@@ -34,6 +34,7 @@
 					],
 					"storeSettings": {
 						"type": "AzureBlobStorageReadSettings",
+						"recursive": true,
 						"enablePartitionDiscovery": false
 					},
 					"formatSettings": {
@@ -96,6 +97,7 @@
 								],
 								"storeSettings": {
 									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
 									"enablePartitionDiscovery": false
 								},
 								"formatSettings": {
@@ -155,53 +157,39 @@
 										"userProperties": [],
 										"typeProperties": {
 											"source": {
-												"type": "DelimitedTextSource",
+												"type": "BinarySource",
 												"storeSettings": {
 													"type": "AzureBlobFSReadSettings",
-													"recursive": true,
-													"enablePartitionDiscovery": false
+													"recursive": true
 												},
 												"formatSettings": {
-													"type": "DelimitedTextReadSettings"
+													"type": "BinaryReadSettings"
 												}
 											},
 											"sink": {
-												"type": "DelimitedTextSink",
+												"type": "BinarySink",
 												"storeSettings": {
 													"type": "AzureBlobFSWriteSettings",
 													"copyBehavior": "PreserveHierarchy"
-												},
-												"formatSettings": {
-													"type": "DelimitedTextWriteSettings",
-													"quoteAllText": true,
-													"fileExtension": ""
 												}
 											},
-											"enableStaging": false,
-											"translator": {
-												"type": "TabularTranslator",
-												"typeConversion": true,
-												"typeConversionSettings": {
-													"allowDataTruncation": true,
-													"treatBooleanAsNumber": false
-												}
-											}
+											"enableStaging": false
 										},
 										"inputs": [
 											{
-												"referenceName": "ds_source_csv_file",
+												"referenceName": "ds_source_copy_recent_file",
 												"type": "DatasetReference",
 												"parameters": {
-													"FileName": {
-														"value": "@item().name",
-														"type": "Expression"
-													},
 													"adls_source_url": {
 														"value": "@pipeline().globalParameters.adls_source_url",
 														"type": "Expression"
 													},
 													"key_vault_url": {
 														"value": "@pipeline().globalParameters.key_vault_url",
+														"type": "Expression"
+													},
+													"FileName": {
+														"value": "@item().name",
 														"type": "Expression"
 													}
 												}
@@ -218,6 +206,10 @@
 													},
 													"key_vault_url": {
 														"value": "@pipeline().globalParameters.key_vault_url",
+														"type": "Expression"
+													},
+													"FileName": {
+														"value": "@item().name",
 														"type": "Expression"
 													}
 												}
