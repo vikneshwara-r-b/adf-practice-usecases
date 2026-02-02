@@ -1,0 +1,38 @@
+{
+	"name": "ds_users_api_json_data",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_adls_gen2_connection",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"adls_source_url": {
+					"value": "@dataset().adls_source_url",
+					"type": "Expression"
+				},
+				"key_vault_url": {
+					"value": "@dataset().key_vault_url",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"adls_source_url": {
+				"type": "string"
+			},
+			"key_vault_url": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "users_output.json",
+				"folderPath": "web_api_output",
+				"fileSystem": "target"
+			}
+		},
+		"schema": {}
+	}
+}
