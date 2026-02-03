@@ -33,6 +33,10 @@
 			"sql_target_server_password_secret_key": {
 				"type": "string",
 				"value": "sql-target-admin-password"
+			},
+			"sql_source_server_username": {
+				"type": "string",
+				"value": "sqladmin"
 			}
 		}
 	},
