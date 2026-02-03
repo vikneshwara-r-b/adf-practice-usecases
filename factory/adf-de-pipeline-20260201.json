@@ -29,6 +29,10 @@
 			"sql_source_server_password_secret_key": {
 				"type": "string",
 				"value": "sql-source-admin-password"
+			},
+			"sql_target_server_password_secret_key": {
+				"type": "string",
+				"value": "sql-target-admin-password"
 			}
 		}
 	},
