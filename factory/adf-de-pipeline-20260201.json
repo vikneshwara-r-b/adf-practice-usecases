@@ -25,6 +25,10 @@
 			"sql_target_database_name": {
 				"type": "string",
 				"value": "targetdb"
+			},
+			"sql_source_server_password_secret_key": {
+				"type": "string",
+				"value": "sql-source-admin-password"
 			}
 		}
 	},
