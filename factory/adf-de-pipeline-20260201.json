@@ -37,6 +37,10 @@
 			"sql_source_server_username": {
 				"type": "string",
 				"value": "sqladmin"
+			},
+			"sql_target_server_username": {
+				"type": "string",
+				"value": "sqladmin"
 			}
 		}
 	},
