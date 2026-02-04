@@ -115,6 +115,29 @@
 					],
 					"timeout": "0.12:00:00"
 				}
+			},
+			{
+				"name": "Execute Copy CSV Files",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Wait and Loop Until Status Change",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_exercise_1_copy_multi_csv_files",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
 			}
 		],
 		"variables": {
