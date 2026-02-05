@@ -18,3 +18,7 @@ where tablename = 'salesitems';
 update master_load_status_tracker set refreshStatus='Y'
 where tablename = 'salesitems' 
 and refreshStatus='N';
+
+update master_load_status_tracker set refreshStatus='N'
+where tablename = 'salesitems' 
+and refreshStatus='Y';
