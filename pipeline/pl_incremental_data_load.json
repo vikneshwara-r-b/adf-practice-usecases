@@ -247,7 +247,7 @@
 							]
 						},
 						{
-							"name": "Update watermark",
+							"name": "Update Old watermark table",
 							"type": "SqlServerStoredProcedure",
 							"dependsOn": [
 								{
