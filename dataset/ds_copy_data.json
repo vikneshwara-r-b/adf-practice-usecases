@@ -1,5 +1,5 @@
 {
-	"name": "ds_incremental_copy_data",
+	"name": "ds_copy_data",
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "ls_mssql_server_connection",

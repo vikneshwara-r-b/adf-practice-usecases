@@ -175,7 +175,7 @@
 							},
 							"inputs": [
 								{
-									"referenceName": "ds_incremental_copy_data",
+									"referenceName": "ds_copy_data",
 									"type": "DatasetReference",
 									"parameters": {
 										"db_server_name": {
@@ -211,7 +211,7 @@
 							],
 							"outputs": [
 								{
-									"referenceName": "ds_incremental_copy_data",
+									"referenceName": "ds_copy_data",
 									"type": "DatasetReference",
 									"parameters": {
 										"db_server_name": {
