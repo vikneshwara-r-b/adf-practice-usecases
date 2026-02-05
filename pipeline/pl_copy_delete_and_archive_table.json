@@ -99,7 +99,7 @@
 				"type": "Script",
 				"dependsOn": [
 					{
-						"activity": "DDL statement for archive table",
+						"activity": "Set Archive Tablename",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -144,14 +144,14 @@
 						{
 							"type": "NonQuery",
 							"text": {
-								"value": "@variables('archive_table_ddl_stmt')",
+								"value": "CREATE TABLE @{variables('archive_table_name')}(\n    id INT PRIMARY KEY,\n    name VARCHAR(100),\n    team VARCHAR(100),\n    score BIGINT,\n    matches_played INT,\n    last_updated DATETIME2\n);",
 								"type": "Expression"
 							}
 						},
 						{
 							"type": "NonQuery",
 							"text": {
-								"value": "@concat('INSERT INTO ',variables('archive_table_name'),' SELECT * FROM dbo.ipl_teams')",
+								"value": "INSERT INTO @{variables('archive_table_name')} SELECT * FROM dbo.ipl_teams\n",
 								"type": "Expression"
 							}
 						},
@@ -161,30 +161,6 @@
 						}
 					],
 					"scriptBlockExecutionTimeout": "02:00:00"
-				}
-			},
-			{
-				"name": "DDL statement for archive table",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "Set Archive Tablename",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "archive_table_ddl_stmt",
-					"value": {
-						"value": "@concat(\n  'CREATE TABLE ',\n  variables('archive_table_name'),\n  ' (\n      id INT PRIMARY KEY,\n      name VARCHAR(100),\n      team VARCHAR(100),\n      score BIGINT,\n      matches_played INT,\n      last_updated DATETIME2\n   );'\n)",
-						"type": "Expression"
-					}
 				}
 			},
 			{
@@ -213,9 +189,6 @@
 			}
 		],
 		"variables": {
-			"archive_table_ddl_stmt": {
-				"type": "String"
-			},
 			"archive_table_name": {
 				"type": "String"
 			}
