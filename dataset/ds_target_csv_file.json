@@ -1,0 +1,51 @@
+{
+	"name": "ds_target_csv_file",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_adls_gen2_connection",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"adls_source_url": {
+					"value": "@dataset().adls_source_url",
+					"type": "Expression"
+				},
+				"key_vault_url": {
+					"value": "@dataset().key_vault_url",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"adls_source_url": {
+				"type": "string"
+			},
+			"key_vault_url": {
+				"type": "string"
+			},
+			"FileName": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "Copy_CSV_Files"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@dataset().FileName",
+					"type": "Expression"
+				},
+				"folderPath": "copyCSVFiles",
+				"fileSystem": "target"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	}
+}
