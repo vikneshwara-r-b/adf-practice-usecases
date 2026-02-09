@@ -262,48 +262,14 @@ resource "azurerm_key_vault_secret" "adls_storage_account_name" {
   ]
 }
 
-# Store ADLS Gen2 connection string
-resource "azurerm_key_vault_secret" "adls_connection_string" {
-  name         = "adls-connection-string"
-  value        = azurerm_storage_account.adls.primary_connection_string
-  key_vault_id = azurerm_key_vault.main.id
-
-  depends_on = [
-    azurerm_role_assignment.user_keyvault_administrator,
-    azurerm_storage_account.adls
-  ]
-}
-
 # ============================================================================
 # Key Vault Secrets - SQL Server Credentials
 # ============================================================================
-
-# Store Source SQL Server admin username
-resource "azurerm_key_vault_secret" "sql_source_admin_username" {
-  name         = "sql-source-admin-username"
-  value        = var.sql_source_admin_login
-  key_vault_id = azurerm_key_vault.main.id
-
-  depends_on = [
-    azurerm_role_assignment.user_keyvault_administrator
-  ]
-}
 
 # Store Source SQL Server admin password
 resource "azurerm_key_vault_secret" "sql_source_admin_password" {
   name         = "sql-source-admin-password"
   value        = var.sql_source_admin_password
-  key_vault_id = azurerm_key_vault.main.id
-
-  depends_on = [
-    azurerm_role_assignment.user_keyvault_administrator
-  ]
-}
-
-# Store Target SQL Server admin username
-resource "azurerm_key_vault_secret" "sql_target_admin_username" {
-  name         = "sql-target-admin-username"
-  value        = var.sql_target_admin_login
   key_vault_id = azurerm_key_vault.main.id
 
   depends_on = [
