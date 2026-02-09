@@ -168,10 +168,7 @@ output "key_vault_secrets" {
   value = {
     adls_storage_account_key  = azurerm_key_vault_secret.adls_storage_account_key.name
     adls_storage_account_name = azurerm_key_vault_secret.adls_storage_account_name.name
-    adls_connection_string    = azurerm_key_vault_secret.adls_connection_string.name
-    sql_source_username       = azurerm_key_vault_secret.sql_source_admin_username.name
     sql_source_password       = azurerm_key_vault_secret.sql_source_admin_password.name
-    sql_target_username       = azurerm_key_vault_secret.sql_target_admin_username.name
     sql_target_password       = azurerm_key_vault_secret.sql_target_admin_password.name
   }
 }
@@ -182,6 +179,7 @@ output "key_vault_secrets" {
 
 output "adf_global_parameters_instructions" {
   description = "Instructions and values for creating ADF global parameters"
+  sensitive   = true
   value       = <<-EOT
     ╔════════════════════════════════════════════════════════════════════════╗
     ║        ADF GLOBAL PARAMETERS - MANUAL CONFIGURATION REQUIRED           ║
@@ -214,11 +212,31 @@ output "adf_global_parameters_instructions" {
        Type: String
        Value: ${azurerm_mssql_database.target.name}
     
+    7. sql_source_server_password_secret_key
+       Type: String
+       Value: sql-source-admin-password
+       (Key Vault secret name for source SQL password)
+    
+    8. sql_target_server_password_secret_key
+       Type: String
+       Value: sql-target-admin-password
+       (Key Vault secret name for target SQL password)
+    
+    9. sql_source_server_username
+       Type: String
+       Value: ${var.sql_source_admin_login}
+    
+    10. sql_target_server_username
+        Type: String
+        Value: ${var.sql_target_admin_login}
+    
     ═══════════════════════════════════════════════════════════════════════
     Usage in ADF Pipelines:
     @pipeline().globalParameters.adls_source_url
     @pipeline().globalParameters.key_vault_url
     @pipeline().globalParameters.sql_source_server_name
+    @pipeline().globalParameters.sql_source_server_password_secret_key
+    @pipeline().globalParameters.sql_source_server_username
     ═══════════════════════════════════════════════════════════════════════
   EOT
 }
