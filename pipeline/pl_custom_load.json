@@ -30,7 +30,7 @@
 								"source": {
 									"type": "AzureSqlSource",
 									"sqlReaderQuery": {
-										"value": "SELECT * FROM @{item().tableSchemaName}.@{item().tableName}\nWHERE @{item().Watermark_Column} > '@{formatDateTime(getPastTime(7, 'Day'), 'yyyy-MM-ddTHH:mm:ss')}'",
+										"value": "SELECT * FROM @{item().tableSchemaName}.@{item().tableName}\nWHERE CAST(@{item().Watermark_Column} AS DATE) > '@{formatDateTime(addDays(coalesce(pipeline().parameters.input_date, utcNow()), -7), 'yyyy-MM-dd')}' AND CAST(@{item().Watermark_Column} AS DATE) <= '@{formatDateTime(coalesce(pipeline().parameters.input_date, utcNow()), 'yyyy-MM-dd')}'",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00",
@@ -38,6 +38,10 @@
 								},
 								"sink": {
 									"type": "AzureSqlSink",
+									"preCopyScript": {
+										"value": "DELETE FROM @{item().tableSchemaName}.@{item().tableName}\nWHERE CAST(@{item().Watermark_Column} AS DATE) > '@{formatDateTime(addDays(coalesce(pipeline().parameters.input_date, utcNow()), -7), 'yyyy-MM-dd')}' AND CAST(@{item().Watermark_Column} AS DATE) <= '@{formatDateTime(coalesce(pipeline().parameters.input_date, utcNow()), 'yyyy-MM-dd')}'",
+										"type": "Expression"
+									},
 									"writeBehavior": "upsert",
 									"upsertSettings": {
 										"useTempDB": true,
@@ -145,6 +149,10 @@
 						"Watermark_Column": "last_updated"
 					}
 				]
+			},
+			"input_date": {
+				"type": "string",
+				"defaultValue": null
 			}
 		},
 		"folder": {
