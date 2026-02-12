@@ -1,0 +1,232 @@
+{
+	"name": "pl_exercise_5",
+	"properties": {
+		"activities": [
+			{
+				"name": "Iterate Over Each Table",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.table_list",
+						"type": "Expression"
+					},
+					"isSequential": false,
+					"activities": [
+						{
+							"name": "Get Old Watermark Value",
+							"type": "Lookup",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": "SELECT WatermarkValue FROM dbo.watermarktable\nWHERE TableName = '@{item().tableName}';",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "ds_source_mssql_query_data",
+									"type": "DatasetReference",
+									"parameters": {
+										"db_server_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_name",
+											"type": "Expression"
+										},
+										"db_user_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_username",
+											"type": "Expression"
+										},
+										"db_password_secret_key": {
+											"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
+											"type": "Expression"
+										},
+										"db_name": "sql_prod_intermediate",
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										}
+									}
+								}
+							}
+						},
+						{
+							"name": "Get New Watermark Value",
+							"type": "Lookup",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "SELECT MAX(@{item().Watermark_Column}) as NewWatermarkValue FROM @{item().tableName}.@{item().tableSchemaName}\nWHERE CAST(@{item().Watermark_Column} <= 'formatDateTime(getPastTime(2, 'Month'), 'yyyy-MM-ddTHH:mm:ss')';",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "ds_source_mssql_query_data",
+									"type": "DatasetReference",
+									"parameters": {
+										"db_server_name": {
+											"value": "@pipeline().globalParameters.sql_target_server_name",
+											"type": "Expression"
+										},
+										"db_user_name": {
+											"value": "@pipeline().globalParameters.sql_target_server_username",
+											"type": "Expression"
+										},
+										"db_password_secret_key": {
+											"value": "@pipeline().globalParameters.sql_target_server_password_secret_key",
+											"type": "Expression"
+										},
+										"db_name": "sql_prod_target",
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										}
+									}
+								}
+							}
+						},
+						{
+							"name": "Copy Table to Bronze Layer",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"writeBehavior": "insert",
+									"sqlWriterUseTableLock": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_copy_data",
+									"type": "DatasetReference",
+									"parameters": {
+										"db_server_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_name",
+											"type": "Expression"
+										},
+										"db_user_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_username",
+											"type": "Expression"
+										},
+										"db_password_secret_key": {
+											"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
+											"type": "Expression"
+										},
+										"db_name": {
+											"value": "sql_prod_source",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"schema_name": {
+											"value": "@item().tableSchemaName",
+											"type": "Expression"
+										},
+										"table_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_copy_data",
+									"type": "DatasetReference",
+									"parameters": {
+										"db_server_name": {
+											"value": "@pipeline().globalParameters.sql_target_server_name",
+											"type": "Expression"
+										},
+										"db_user_name": {
+											"value": "@pipeline().globalParameters.sql_target_server_username",
+											"type": "Expression"
+										},
+										"db_password_secret_key": {
+											"value": "@pipeline().globalParameters.sql_target_server_password_secret_key",
+											"type": "Expression"
+										},
+										"db_name": {
+											"value": "sql_prod_intermediate",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"schema_name": {
+											"value": "@item().tableSchemaName",
+											"type": "Expression"
+										},
+										"table_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"table_list": {
+				"type": "array"
+			}
+		},
+		"folder": {
+			"name": "Exercises"
+		},
+		"annotations": []
+	}
+}
