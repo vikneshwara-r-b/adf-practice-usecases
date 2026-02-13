@@ -17,8 +17,6 @@
 						{
 							"name": "Get Old Watermark Value",
 							"type": "Lookup",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Copy Table to Bronze Layer",
@@ -70,8 +68,6 @@
 						{
 							"name": "Get New Watermark Value",
 							"type": "Lookup",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [],
 							"policy": {
 								"timeout": "0.12:00:00",
@@ -85,7 +81,7 @@
 								"source": {
 									"type": "AzureSqlSource",
 									"sqlReaderQuery": {
-										"value": "SELECT MAX(@{item().Watermark_Column}) as NewWatermarkValue FROM @{item().tableName}.@{item().tableSchemaName}\nWHERE CAST(@{item().Watermark_Column} AS DATE) > 'formatDateTime(getPastTime(2, 'Month'), 'yyyy-MM-dd')'",
+										"value": "SELECT MAX(@{item().Watermark_Column}) as NewWatermarkValue FROM @{item().tableSchemaName}.@{item().tableName}\nWHERE CAST(@{item().Watermark_Column} AS DATE) <= '@{formatDateTime(getPastTime(2, 'Month'), 'yyyy-MM-dd')}'",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00",
@@ -96,18 +92,18 @@
 									"type": "DatasetReference",
 									"parameters": {
 										"db_server_name": {
-											"value": "@pipeline().globalParameters.sql_target_server_name",
+											"value": "@pipeline().globalParameters.sql_source_server_name",
 											"type": "Expression"
 										},
 										"db_user_name": {
-											"value": "@pipeline().globalParameters.sql_target_server_username",
+											"value": "@pipeline().globalParameters.sql_source_server_username",
 											"type": "Expression"
 										},
 										"db_password_secret_key": {
-											"value": "@pipeline().globalParameters.sql_target_server_password_secret_key",
+											"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
 											"type": "Expression"
 										},
-										"db_name": "sql_prod_target",
+										"db_name": "sql_prod_intermediate",
 										"key_vault_url": {
 											"value": "@pipeline().globalParameters.key_vault_url",
 											"type": "Expression"
@@ -252,7 +248,7 @@
 								"source": {
 									"type": "AzureSqlSource",
 									"sqlReaderQuery": {
-										"value": "SELECT * FROM @{item().tableName}.@{item().tableSchemaName}\nWHERE CAST(@{item().Watermark_Column} AS DATE) >= 'formatDateTime(getPastTime(2, 'Month'), 'yyyy-MM-dd')'\nAND CAST(@{item().Watermark_Column} AS DATE) < 'formatDateTime(utcNow(), 'yyyy-MM-dd');",
+										"value": "SELECT * FROM @{item().tableName}.@{item().tableSchemaName}\nWHERE CAST(@{item().Watermark_Column} AS DATE) > '@{formatDateTime(activity('Get Old Watermark Value').output.firstRow, 'yyyy-MM-dd')}' AND CAST(@{item().Watermark_Column} AS DATE) <= '@{formatDateTime(activity('Get New Watermark Value').output.firstRow, 'yyyy-MM-dd')}'",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00",
@@ -261,7 +257,7 @@
 								"sink": {
 									"type": "AzureSqlSink",
 									"preCopyScript": {
-										"value": "DELETE FROM @{item().tableName}.@{item().tableSchemaName}\nWHERE CAST(@{item().Watermark_Column} AS DATE) >= 'formatDateTime(getPastTime(2, 'Month'), 'yyyy-MM-dd')'",
+										"value": "DELETE FROM @{item().tableName}.@{item().tableSchemaName}\nWHERE CAST(@{item().Watermark_Column} AS DATE) > '@{formatDateTime(getPastTime(2, 'Month'), 'yyyy-MM-dd')}'\nAND CAST(@{item().Watermark_Column} AS DATE) <= '@{formatDateTime(utcNow(), 'yyyy-MM-dd')}'",
 										"type": "Expression"
 									},
 									"writeBehavior": "upsert",
@@ -356,6 +352,55 @@
 									}
 								}
 							]
+						},
+						{
+							"name": "Update Old Watermark Table",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "Copy Table to Silver Layer",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "dbo.usp_write_watermark"
+							},
+							"linkedServiceName": {
+								"referenceName": "ls_mssql_server_connection",
+								"type": "LinkedServiceReference",
+								"parameters": {
+									"db_server_name": {
+										"value": "@pipeline().globalParameters.sql_source_server_name",
+										"type": "Expression"
+									},
+									"db_user_name": {
+										"value": "@pipeline().globalParameters.sql_source_server_username",
+										"type": "Expression"
+									},
+									"db_password_secret_key": {
+										"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
+										"type": "Expression"
+									},
+									"db_name": {
+										"value": "sql_prod_intermediate",
+										"type": "Expression"
+									},
+									"key_vault_url": {
+										"value": "@pipeline().globalParameters.key_vault_url",
+										"type": "Expression"
+									}
+								}
+							}
 						}
 					]
 				}
