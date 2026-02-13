@@ -132,6 +132,10 @@
 								},
 								"sink": {
 									"type": "AzureSqlSink",
+									"preCopyScript": {
+										"value": "TRUNCATE TABLE @{item().tableSchemaName}.@{item().tableName}",
+										"type": "Expression"
+									},
 									"writeBehavior": "insert",
 									"sqlWriterUseTableLock": false,
 									"disableMetricsCollection": false
@@ -188,15 +192,15 @@
 									"type": "DatasetReference",
 									"parameters": {
 										"db_server_name": {
-											"value": "@pipeline().globalParameters.sql_target_server_name",
+											"value": "@pipeline().globalParameters.sql_source_server_name",
 											"type": "Expression"
 										},
 										"db_user_name": {
-											"value": "@pipeline().globalParameters.sql_target_server_username",
+											"value": "@pipeline().globalParameters.sql_source_server_username",
 											"type": "Expression"
 										},
 										"db_password_secret_key": {
-											"value": "@pipeline().globalParameters.sql_target_server_password_secret_key",
+											"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
 											"type": "Expression"
 										},
 										"db_name": {
@@ -222,6 +226,8 @@
 						{
 							"name": "Copy Table to Silver Layer",
 							"type": "Copy",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Get Old Watermark Value",
@@ -248,7 +254,7 @@
 								"source": {
 									"type": "AzureSqlSource",
 									"sqlReaderQuery": {
-										"value": "SELECT * FROM @{item().tableName}.@{item().tableSchemaName}\nWHERE CAST(@{item().Watermark_Column} AS DATE) > '@{formatDateTime(activity('Get Old Watermark Value').output.firstRow, 'yyyy-MM-dd')}' AND CAST(@{item().Watermark_Column} AS DATE) <= '@{formatDateTime(activity('Get New Watermark Value').output.firstRow, 'yyyy-MM-dd')}'",
+										"value": "SELECT * FROM @{item().tableName}.@{item().tableSchemaName}\nWHERE CAST(@{item().Watermark_Column} AS DATE) > '@{formatDateTime(activity('Get Old Watermark Value').output.firstRow.WatermarkValue, 'yyyy-MM-dd')}' AND CAST(@{item().Watermark_Column} AS DATE) <= '@{formatDateTime(activity('Get New Watermark Value').output.firstRow.NewWatermarkValue, 'yyyy-MM-dd')}'",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00",
@@ -373,7 +379,30 @@
 							},
 							"userProperties": [],
 							"typeProperties": {
-								"storedProcedureName": "dbo.usp_write_watermark"
+								"storedProcedureName": "dbo.usp_write_watermark",
+								"storedProcedureParameters": {
+									"last_updated": {
+										"value": {
+											"value": "@activity('Get New Watermark Value').output.firstRow.NewWatermarkValue",
+											"type": "Expression"
+										},
+										"type": "DateTime"
+									},
+									"SchemaName": {
+										"value": {
+											"value": "@item().tableSchemaName",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"tableName": {
+										"value": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										},
+										"type": "String"
+									}
+								}
 							},
 							"linkedServiceName": {
 								"referenceName": "ls_mssql_server_connection",
@@ -408,7 +437,19 @@
 		],
 		"parameters": {
 			"table_list": {
-				"type": "array"
+				"type": "array",
+				"defaultValue": [
+					{
+						"tableName": "employees",
+						"tableSchemaName": "dbo",
+						"Watermark_Column": "last_updated"
+					},
+					{
+						"tableName": "salesitems",
+						"tableSchemaName": "dbo",
+						"Watermark_Column": "last_updated"
+					}
+				]
 			}
 		},
 		"folder": {
