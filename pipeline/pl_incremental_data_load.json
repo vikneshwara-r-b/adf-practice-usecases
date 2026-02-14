@@ -31,7 +31,7 @@
 								"source": {
 									"type": "AzureSqlSource",
 									"sqlReaderQuery": {
-										"value": "SELECT WatermarkValue FROM dbo.watermarktable\nWHERE TableName = '@{item().tableName}';",
+										"value": "SELECT WatermarkValue FROM dbo.watermarktable\nWHERE SchemaName = '@{item().tableSchemaName}' AND \nTableName = '@{item().tableName}';",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00",

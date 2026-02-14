@@ -17,7 +17,14 @@
 						{
 							"name": "Copy Table to Bronze Layer",
 							"type": "Copy",
-							"dependsOn": [],
+							"dependsOn": [
+								{
+									"activity": "Get Old Watermark Value",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
 							"policy": {
 								"timeout": "0.12:00:00",
 								"retry": 0,
@@ -130,12 +137,6 @@
 							"type": "Copy",
 							"dependsOn": [
 								{
-									"activity": "Get Old Watermark Value",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								},
-								{
 									"activity": "Get New Watermark Value",
 									"dependencyConditions": [
 										"Succeeded"
@@ -154,7 +155,7 @@
 								"source": {
 									"type": "AzureSqlSource",
 									"sqlReaderQuery": {
-										"value": "SELECT * FROM @{item().tableSchemaName}.@{item().tableName}\nWHERE @{item().Watermark_Column} > MIN('@{formatDateTime(getPastTime(2, 'Month'), 'yyyy-MM-ddTHH:mm:ss')}','@{formatDateTime(activity('Get Old Watermark Value').output.firstRow.WatermarkValue,'yyyy-MM-ddTHH:mm:ss')}') AND @{item().Watermark_Column} <= '@{formatDateTime(activity('Get New Watermark Value').output.firstRow.NewWatermarkValue,'yyyy-MM-ddTHH:mm:ss')}'",
+										"value": "SELECT * FROM @{item().tableSchemaName}.@{item().tableName}\nWHERE @{item().Watermark_Column} >= '@{formatDateTime(activity('Get Old Watermark Value').output.firstRow.WatermarkValue,'yyyy-MM-ddTHH:mm:ss')}' AND @{item().Watermark_Column} <= '@{formatDateTime(activity('Get New Watermark Value').output.firstRow.NewWatermarkValue,'yyyy-MM-ddTHH:mm:ss')}'",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00",
@@ -262,14 +263,7 @@
 						{
 							"name": "Get Old Watermark Value",
 							"type": "Lookup",
-							"dependsOn": [
-								{
-									"activity": "Copy Table to Bronze Layer",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
+							"dependsOn": [],
 							"policy": {
 								"timeout": "0.12:00:00",
 								"retry": 0,
@@ -282,7 +276,7 @@
 								"source": {
 									"type": "AzureSqlSource",
 									"sqlReaderQuery": {
-										"value": "SELECT * FROM dbo.watermarktable\nWHERE TableName = '@{item().tableName}';",
+										"value": "SELECT CASE WHEN WatermarkValue <= '@{formatDateTime(startOfDay(getPastTime(2, 'Month')), 'yyyy-MM-ddTHH:mm:ss')}'\nTHEN WatermarkValue\nELSE '@{formatDateTime(startOfDay(getPastTime(2, 'Month')), 'yyyy-MM-ddTHH:mm:ss')}'\nEND AS WatermarkValue\nFROM dbo.watermarktable\nWHERE SchemaName = '@{item().tableSchemaName}'\nAND TableName = '@{item().tableName}';",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00",
@@ -305,7 +299,7 @@
 											"type": "Expression"
 										},
 										"db_name": {
-											"value": "@pipeline().globalParameters.sql_source_database_name",
+											"value": "sql_prod_intermediate",
 											"type": "Expression"
 										},
 										"key_vault_url": {
@@ -319,7 +313,14 @@
 						{
 							"name": "Get New Watermark Value",
 							"type": "Lookup",
-							"dependsOn": [],
+							"dependsOn": [
+								{
+									"activity": "Copy Table to Bronze Layer",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
 							"policy": {
 								"timeout": "0.12:00:00",
 								"retry": 0,
@@ -331,7 +332,10 @@
 							"typeProperties": {
 								"source": {
 									"type": "AzureSqlSource",
-									"sqlReaderQuery": "SELECT MAX(@{item().Watermark_Column}) AS NewWatermarkValue\nFROM @{item().tableSchemaName}.@{item().tableName};",
+									"sqlReaderQuery": {
+										"value": "SELECT MAX(@{item().Watermark_Column}) AS NewWatermarkValue\nFROM @{item().tableSchemaName}.@{item().tableName};",
+										"type": "Expression"
+									},
 									"queryTimeout": "02:00:00",
 									"partitionOption": "None"
 								},
@@ -352,7 +356,7 @@
 											"type": "Expression"
 										},
 										"db_name": {
-											"value": "@pipeline().globalParameters.sql_source_database_name",
+											"value": "sql_prod_intermediate",
 											"type": "Expression"
 										},
 										"key_vault_url": {
