@@ -82,7 +82,7 @@
 								"source": {
 									"type": "AzureSqlSource",
 									"sqlReaderQuery": {
-										"value": "SELECT MAX(@{item().Watermark_Column}) AS NewWatermarkValue\nFROM @{item().tableName};",
+										"value": "SELECT MAX(@{item().Watermark_Column}) AS NewWatermarkValue\nFROM @{item().tableSchemaName}.@{item().tableName};",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00",
