@@ -1,0 +1,129 @@
+{
+	"name": "pl_tumbling_window",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy using tumbling",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderStoredProcedureName": "dbo.usp_for_sales_tumbling",
+						"storedProcedureParameters": {
+							"startdate": {
+								"type": "String",
+								"value": {
+									"value": "@pipeline().parameters.start_date",
+									"type": "Expression"
+								}
+							},
+							"enddate": {
+								"type": "String",
+								"value": {
+									"value": "@pipeline().parameters.end_date",
+									"type": "Expression"
+								}
+							}
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"sink": {
+						"type": "AzureSqlSink",
+						"writeBehavior": "insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_source_mssql_query_data",
+						"type": "DatasetReference",
+						"parameters": {
+							"db_server_name": {
+								"value": "@pipeline().globalParameters.sql_source_server_name",
+								"type": "Expression"
+							},
+							"db_user_name": {
+								"value": "@pipeline().globalParameters.sql_source_server_username",
+								"type": "Expression"
+							},
+							"db_password_secret_key": {
+								"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
+								"type": "Expression"
+							},
+							"db_name": {
+								"value": "@pipeline().globalParameters.sql_source_database_name",
+								"type": "Expression"
+							},
+							"key_vault_url": {
+								"value": "@pipeline().globalParameters.key_vault_url",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_copy_data",
+						"type": "DatasetReference",
+						"parameters": {
+							"db_server_name": {
+								"value": "@pipeline().globalParameters.sql_target_server_name",
+								"type": "Expression"
+							},
+							"db_user_name": {
+								"value": "@pipeline().globalParameters.sql_target_server_username",
+								"type": "Expression"
+							},
+							"db_password_secret_key": {
+								"value": "@pipeline().globalParameters.sql_target_server_password_secret_key",
+								"type": "Expression"
+							},
+							"db_name": {
+								"value": "@pipeline().globalParameters.sql_target_database_name",
+								"type": "Expression"
+							},
+							"key_vault_url": {
+								"value": "@pipeline().globalParameters.key_vault_url",
+								"type": "Expression"
+							},
+							"schema_name": "dbo",
+							"table_name": "sales_tumbling"
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"start_date": {
+				"type": "string"
+			},
+			"end_date": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "HandsOn"
+		},
+		"annotations": []
+	}
+}
