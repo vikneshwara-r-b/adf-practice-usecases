@@ -1,9 +1,9 @@
 {
-	"name": "pl_incremental_data_load",
+	"name": "pl_exercise_5",
 	"properties": {
 		"activities": [
 			{
-				"name": "Iterate Each Table",
+				"name": "Iterate Over Each Table",
 				"type": "ForEach",
 				"dependsOn": [],
 				"userProperties": [],
@@ -12,112 +12,10 @@
 						"value": "@pipeline().parameters.table_list",
 						"type": "Expression"
 					},
-					"isSequential": true,
+					"isSequential": false,
 					"activities": [
 						{
-							"name": "Get Old Watermark Value",
-							"description": "Get old watermark value from dbo.watermarktable table",
-							"type": "Lookup",
-							"dependsOn": [],
-							"policy": {
-								"timeout": "0.12:00:00",
-								"retry": 0,
-								"retryIntervalInSeconds": 30,
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"source": {
-									"type": "AzureSqlSource",
-									"sqlReaderQuery": {
-										"value": "SELECT WatermarkValue FROM dbo.watermarktable\nWHERE SchemaName = '@{item().tableSchemaName}' AND \nTableName = '@{item().tableName}';",
-										"type": "Expression"
-									},
-									"queryTimeout": "02:00:00",
-									"partitionOption": "None"
-								},
-								"dataset": {
-									"referenceName": "ds_source_mssql_query_data",
-									"type": "DatasetReference",
-									"parameters": {
-										"db_server_name": {
-											"value": "@pipeline().globalParameters.sql_source_server_name",
-											"type": "Expression"
-										},
-										"db_user_name": {
-											"value": "@pipeline().globalParameters.sql_source_server_username",
-											"type": "Expression"
-										},
-										"db_password_secret_key": {
-											"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
-											"type": "Expression"
-										},
-										"db_name": {
-											"value": "@pipeline().globalParameters.sql_source_database_name",
-											"type": "Expression"
-										},
-										"key_vault_url": {
-											"value": "@pipeline().globalParameters.key_vault_url",
-											"type": "Expression"
-										}
-									}
-								}
-							}
-						},
-						{
-							"name": "Get New Watermark Value",
-							"description": "Get new watermark value from table which have to be copied",
-							"type": "Lookup",
-							"dependsOn": [],
-							"policy": {
-								"timeout": "0.12:00:00",
-								"retry": 0,
-								"retryIntervalInSeconds": 30,
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"source": {
-									"type": "AzureSqlSource",
-									"sqlReaderQuery": {
-										"value": "SELECT MAX(@{item().Watermark_Column}) AS NewWatermarkValue\nFROM @{item().tableSchemaName}.@{item().tableName};",
-										"type": "Expression"
-									},
-									"queryTimeout": "02:00:00",
-									"partitionOption": "None"
-								},
-								"dataset": {
-									"referenceName": "ds_source_mssql_query_data",
-									"type": "DatasetReference",
-									"parameters": {
-										"db_server_name": {
-											"value": "@pipeline().globalParameters.sql_source_server_name",
-											"type": "Expression"
-										},
-										"db_user_name": {
-											"value": "@pipeline().globalParameters.sql_source_server_username",
-											"type": "Expression"
-										},
-										"db_password_secret_key": {
-											"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
-											"type": "Expression"
-										},
-										"db_name": {
-											"value": "@pipeline().globalParameters.sql_source_database_name",
-											"type": "Expression"
-										},
-										"key_vault_url": {
-											"value": "@pipeline().globalParameters.key_vault_url",
-											"type": "Expression"
-										}
-									}
-								}
-							}
-						},
-						{
-							"name": "Copy data for Each Table",
+							"name": "Copy Table to Bronze Layer",
 							"type": "Copy",
 							"dependsOn": [
 								{
@@ -125,7 +23,119 @@
 									"dependencyConditions": [
 										"Succeeded"
 									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
 								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"preCopyScript": {
+										"value": "TRUNCATE TABLE @{item().tableSchemaName}.@{item().tableName}",
+										"type": "Expression"
+									},
+									"writeBehavior": "insert",
+									"sqlWriterUseTableLock": false,
+									"disableMetricsCollection": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_copy_data",
+									"type": "DatasetReference",
+									"parameters": {
+										"db_server_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_name",
+											"type": "Expression"
+										},
+										"db_user_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_username",
+											"type": "Expression"
+										},
+										"db_password_secret_key": {
+											"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
+											"type": "Expression"
+										},
+										"db_name": {
+											"value": "sql_prod_source",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"schema_name": {
+											"value": "@item().tableSchemaName",
+											"type": "Expression"
+										},
+										"table_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_copy_data",
+									"type": "DatasetReference",
+									"parameters": {
+										"db_server_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_name",
+											"type": "Expression"
+										},
+										"db_user_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_username",
+											"type": "Expression"
+										},
+										"db_password_secret_key": {
+											"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
+											"type": "Expression"
+										},
+										"db_name": {
+											"value": "sql_prod_intermediate",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"schema_name": {
+											"value": "@item().tableSchemaName",
+											"type": "Expression"
+										},
+										"table_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Copy Table to Silver Layer",
+							"type": "Copy",
+							"dependsOn": [
 								{
 									"activity": "Get New Watermark Value",
 									"dependencyConditions": [
@@ -145,7 +155,7 @@
 								"source": {
 									"type": "AzureSqlSource",
 									"sqlReaderQuery": {
-										"value": "SELECT * FROM @{item().tableSchemaName}.@{item().tableName}\nWHERE @{item().Watermark_Column} > '@{formatDateTime(activity('Get Old Watermark Value').output.firstRow.WatermarkValue,'yyyy-MM-ddTHH:mm:ss')}' AND @{item().Watermark_Column} <= '@{formatDateTime(activity('Get New Watermark Value').output.firstRow.NewWatermarkValue,'yyyy-MM-ddTHH:mm:ss')}'",
+										"value": "SELECT * FROM @{item().tableSchemaName}.@{item().tableName}\nWHERE @{item().Watermark_Column} >= '@{formatDateTime(activity('Get Old Watermark Value').output.firstRow.WatermarkValue,'yyyy-MM-ddTHH:mm:ss')}' AND @{item().Watermark_Column} <= '@{formatDateTime(activity('Get New Watermark Value').output.firstRow.NewWatermarkValue,'yyyy-MM-ddTHH:mm:ss')}'",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00",
@@ -153,9 +163,13 @@
 								},
 								"sink": {
 									"type": "AzureSqlSink",
+									"preCopyScript": {
+										"value": "DELETE FROM @{item().tableSchemaName}.@{item().tableName}\nWHERE CAST(@{item().Watermark_Column} AS DATE) > '@{formatDateTime(getPastTime(2, 'Month'), 'yyyy-MM-dd')}'\nAND CAST(@{item().Watermark_Column} AS DATE) <= '@{formatDateTime(utcNow(), 'yyyy-MM-dd')}'",
+										"type": "Expression"
+									},
 									"writeBehavior": "upsert",
 									"upsertSettings": {
-										"useTempDB": false,
+										"useTempDB": true,
 										"keys": [
 											"id"
 										]
@@ -191,7 +205,7 @@
 											"type": "Expression"
 										},
 										"db_name": {
-											"value": "@pipeline().globalParameters.sql_source_database_name",
+											"value": "sql_prod_intermediate",
 											"type": "Expression"
 										},
 										"key_vault_url": {
@@ -227,7 +241,7 @@
 											"type": "Expression"
 										},
 										"db_name": {
-											"value": "@pipeline().globalParameters.sql_target_database_name",
+											"value": "sql_prod_target",
 											"type": "Expression"
 										},
 										"key_vault_url": {
@@ -247,11 +261,118 @@
 							]
 						},
 						{
+							"name": "Get Old Watermark Value",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "SELECT CASE WHEN WatermarkValue <= '@{formatDateTime(startOfDay(getPastTime(2, 'Month')), 'yyyy-MM-ddTHH:mm:ss')}'\nTHEN WatermarkValue\nELSE '@{formatDateTime(startOfDay(getPastTime(2, 'Month')), 'yyyy-MM-ddTHH:mm:ss')}'\nEND AS WatermarkValue\nFROM dbo.watermarktable\nWHERE SchemaName = '@{item().tableSchemaName}'\nAND TableName = '@{item().tableName}';",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "ds_source_mssql_query_data",
+									"type": "DatasetReference",
+									"parameters": {
+										"db_server_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_name",
+											"type": "Expression"
+										},
+										"db_user_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_username",
+											"type": "Expression"
+										},
+										"db_password_secret_key": {
+											"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
+											"type": "Expression"
+										},
+										"db_name": {
+											"value": "sql_prod_intermediate",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										}
+									}
+								}
+							}
+						},
+						{
+							"name": "Get New Watermark Value",
+							"type": "Lookup",
+							"dependsOn": [
+								{
+									"activity": "Copy Table to Bronze Layer",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "SELECT MAX(@{item().Watermark_Column}) AS NewWatermarkValue\nFROM @{item().tableSchemaName}.@{item().tableName};",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "ds_source_mssql_query_data",
+									"type": "DatasetReference",
+									"parameters": {
+										"db_server_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_name",
+											"type": "Expression"
+										},
+										"db_user_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_username",
+											"type": "Expression"
+										},
+										"db_password_secret_key": {
+											"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
+											"type": "Expression"
+										},
+										"db_name": {
+											"value": "sql_prod_intermediate",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										}
+									}
+								}
+							}
+						},
+						{
 							"name": "Update Old watermark table",
 							"type": "SqlServerStoredProcedure",
 							"dependsOn": [
 								{
-									"activity": "Copy data for Each Table",
+									"activity": "Copy Table to Silver Layer",
 									"dependencyConditions": [
 										"Succeeded"
 									]
@@ -308,7 +429,7 @@
 										"type": "Expression"
 									},
 									"db_name": {
-										"value": "@pipeline().globalParameters.sql_source_database_name",
+										"value": "sql_prod_intermediate",
 										"type": "Expression"
 									},
 									"key_vault_url": {
@@ -327,11 +448,6 @@
 				"type": "array",
 				"defaultValue": [
 					{
-						"tableName": "iplteams",
-						"tableSchemaName": "dbo",
-						"Watermark_Column": "last_updated"
-					},
-					{
 						"tableName": "employees",
 						"tableSchemaName": "dbo",
 						"Watermark_Column": "last_updated"
@@ -345,7 +461,7 @@
 			}
 		},
 		"folder": {
-			"name": "Load_Types"
+			"name": "Exercises"
 		},
 		"annotations": []
 	}
