@@ -121,7 +121,17 @@
 							"typeProperties": {
 								"dataset": {
 									"referenceName": "ds_sap_source_csv_file",
-									"type": "DatasetReference"
+									"type": "DatasetReference",
+									"parameters": {
+										"adls_source_url": {
+											"value": "@pipeline().globalParameters.adls_source_url",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										}
+									}
 								},
 								"logStorageSettings": {
 									"linkedServiceName": {
@@ -144,6 +154,10 @@
 								"storeSettings": {
 									"type": "AzureBlobFSReadSettings",
 									"recursive": true,
+									"wildcardFileName": {
+										"value": "@concat(item().tableName,'*.csv')",
+										"type": "Expression"
+									},
 									"enablePartitionDiscovery": false
 								}
 							}
@@ -181,10 +195,6 @@
 										"key_vault_url": {
 											"value": "@pipeline().globalParameters.key_vault_url",
 											"type": "Expression"
-										},
-										"fileName": {
-											"value": "@item().tableName",
-											"type": "Expression"
 										}
 									}
 								},
@@ -209,6 +219,10 @@
 								"storeSettings": {
 									"type": "AzureBlobFSReadSettings",
 									"recursive": true,
+									"wildcardFileName": {
+										"value": "@concat(item().tableName,'*.csv')",
+										"type": "Expression"
+									},
 									"enablePartitionDiscovery": false
 								}
 							}
@@ -216,8 +230,6 @@
 						{
 							"name": "Copy Raw to Bronze - Full Load",
 							"type": "Copy",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Copy Source to Raw",
@@ -240,6 +252,11 @@
 									"storeSettings": {
 										"type": "AzureBlobFSReadSettings",
 										"recursive": true,
+										"wildcardFolderPath": "sap_raw",
+										"wildcardFileName": {
+											"value": "@concat(item().tableName, '*.csv')",
+											"type": "Expression"
+										},
 										"enablePartitionDiscovery": false
 									},
 									"formatSettings": {
@@ -322,8 +339,6 @@
 						{
 							"name": "Get Old Watermark Value",
 							"type": "Lookup",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Copy Raw to Bronze - Full Load",
@@ -381,8 +396,6 @@
 						{
 							"name": "Get New Watermark Value",
 							"type": "Lookup",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Copy Raw to Bronze - Full Load",
@@ -440,8 +453,6 @@
 						{
 							"name": "Copy Bronze to Silver - Incremental Load",
 							"type": "Copy",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Get Old Watermark Value",
@@ -566,8 +577,6 @@
 						{
 							"name": "Update Old Watermark Table",
 							"type": "SqlServerStoredProcedure",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Copy Bronze to Silver - Incremental Load",
