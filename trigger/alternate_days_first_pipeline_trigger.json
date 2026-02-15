@@ -1,5 +1,5 @@
 {
-	"name": "trigger_alternate_days_10am",
+	"name": "alternate_days_first_pipeline_trigger",
 	"properties": {
 		"annotations": [],
 		"runtimeState": "Stopped",
