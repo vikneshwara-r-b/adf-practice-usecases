@@ -30,7 +30,7 @@
 								"source": {
 									"type": "AzureSqlSource",
 									"sqlReaderQuery": {
-										"value": "SELECT * FROM @{item().tableSchemaName}.@{item().tableName}\nWHERE CAST(@{item().Watermark_Column} AS DATE) > '@{formatDateTime(addDays(coalesce(pipeline().parameters.input_date, utcNow()), -7), 'yyyy-MM-dd')}' AND CAST(@{item().Watermark_Column} AS DATE) <= '@{formatDateTime(coalesce(pipeline().parameters.input_date, utcNow()), 'yyyy-MM-dd')}'",
+										"value": "SELECT * FROM @{item().tableSchemaName}.@{item().tableName}\nWHERE @{item().Watermark_Column} > '@{formatDateTime(startOfDay(addDays(coalesce(pipeline().parameters.input_date, startOfDay(utcNow())), -7)), 'yyyy-MM-dd')}' AND @{item().Watermark_Column} <= '@{formatDateTime(coalesce(concat(pipeline().parameters.input_date, 'T23:59:59'), utcNow()), 'yyyy-MM-ddTHH:mm:ss')}'",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00",
