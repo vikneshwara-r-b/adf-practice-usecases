@@ -1,0 +1,43 @@
+{
+	"name": "trigger_alternate_days_10am",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Month",
+				"interval": 1,
+				"startTime": "2026-02-15T02:37:00",
+				"timeZone": "India Standard Time",
+				"schedule": {
+					"minutes": [
+						0
+					],
+					"hours": [
+						10
+					],
+					"monthDays": [
+						1,
+						3,
+						5,
+						7,
+						9,
+						11,
+						13,
+						15,
+						17,
+						19,
+						21,
+						23,
+						25,
+						27,
+						29,
+						31
+					]
+				}
+			}
+		}
+	}
+}
