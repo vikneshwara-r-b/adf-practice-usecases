@@ -1,0 +1,1297 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "adf-de-pipeline-20260201"
+		},
+		"ls_jsonplaceholder_API_connection_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://jsonplaceholder.typicode.com"
+		},
+		"ls_kv_connection_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "@{linkedService().key_vault_url}"
+		},
+		"ls_adls_gen2_connection_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "@{linkedService().adls_source_url}"
+		},
+		"ls_mssql_server_connection_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "@{linkedService().db_server_name}"
+		},
+		"ls_mssql_server_connection_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "@{linkedService().db_name}"
+		},
+		"ls_mssql_server_connection_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "@{linkedService().db_user_name}"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_jsonplaceholder_API_connection')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "RestService",
+				"typeProperties": {
+					"url": "[parameters('ls_jsonplaceholder_API_connection_properties_typeProperties_url')]",
+					"enableServerCertificateValidation": true,
+					"authenticationType": "Anonymous"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_kv_connection')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Used to connect with Azure Key Vault for fetching credentails for different Azure resources",
+				"parameters": {
+					"key_vault_url": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureKeyVault",
+				"typeProperties": {
+					"baseUrl": "[parameters('ls_kv_connection_properties_typeProperties_baseUrl')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/alternate_days_first_pipeline_trigger')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Stopped",
+				"pipelines": [],
+				"type": "ScheduleTrigger",
+				"typeProperties": {
+					"recurrence": {
+						"frequency": "Month",
+						"interval": 1,
+						"startTime": "2026-02-15T02:37:00",
+						"timeZone": "India Standard Time",
+						"schedule": {
+							"minutes": [
+								0
+							],
+							"hours": [
+								10
+							],
+							"monthDays": [
+								1,
+								3,
+								5,
+								7,
+								9,
+								11,
+								13,
+								15,
+								17,
+								19,
+								21,
+								23,
+								25,
+								27,
+								29,
+								31
+							]
+						}
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/alternate_days_second_pipeline_trigger')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Stopped",
+				"pipelines": [],
+				"type": "ScheduleTrigger",
+				"typeProperties": {
+					"recurrence": {
+						"frequency": "Month",
+						"interval": 1,
+						"startTime": "2026-02-15T02:42:00",
+						"timeZone": "India Standard Time",
+						"schedule": {
+							"minutes": [
+								30
+							],
+							"hours": [
+								10
+							],
+							"monthDays": [
+								1,
+								3,
+								5,
+								7,
+								9,
+								11,
+								13,
+								15,
+								17,
+								19,
+								21,
+								23,
+								25,
+								27,
+								29,
+								31
+							]
+						}
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_users_api_data')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_jsonplaceholder_API_connection",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "Web_API_Output_File"
+				},
+				"annotations": [],
+				"type": "RestResource",
+				"typeProperties": {
+					"relativeUrl": "users"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_jsonplaceholder_API_connection')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_adls_gen2_connection')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Used for connecting with ADLS Gen2 containers",
+				"parameters": {
+					"adls_source_url": {
+						"type": "String"
+					},
+					"key_vault_url": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('ls_adls_gen2_connection_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "ls_kv_connection",
+							"type": "LinkedServiceReference",
+							"parameters": {
+								"key_vault_url": {
+									"value": "@linkedService().key_vault_url",
+									"type": "Expression"
+								}
+							}
+						},
+						"secretName": "adls-storage-account-key"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_kv_connection')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_mssql_server_connection')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Used to connect with source or target MSSQL server connection ",
+				"parameters": {
+					"db_server_name": {
+						"type": "String"
+					},
+					"db_user_name": {
+						"type": "String"
+					},
+					"db_password_secret_key": {
+						"type": "String"
+					},
+					"db_name": {
+						"type": "String"
+					},
+					"key_vault_url": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('ls_mssql_server_connection_properties_typeProperties_server')]",
+					"database": "[parameters('ls_mssql_server_connection_properties_typeProperties_database')]",
+					"encrypt": "optional",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('ls_mssql_server_connection_properties_typeProperties_userName')]",
+					"password": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "ls_kv_connection",
+							"type": "LinkedServiceReference",
+							"parameters": {
+								"key_vault_url": {
+									"value": "@linkedService().key_vault_url",
+									"type": "Expression"
+								}
+							}
+						},
+						"secretName": {
+							"value": "@linkedService().db_password_secret_key",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_kv_connection')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_copy_data')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_mssql_server_connection",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"db_server_name": {
+							"value": "@dataset().db_server_name",
+							"type": "Expression"
+						},
+						"db_user_name": {
+							"value": "@dataset().db_user_name",
+							"type": "Expression"
+						},
+						"db_password_secret_key": {
+							"value": "@dataset().db_password_secret_key",
+							"type": "Expression"
+						},
+						"db_name": {
+							"value": "@dataset().db_name",
+							"type": "Expression"
+						},
+						"key_vault_url": {
+							"value": "@dataset().key_vault_url",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"db_server_name": {
+						"type": "string"
+					},
+					"db_user_name": {
+						"type": "string"
+					},
+					"db_password_secret_key": {
+						"type": "string"
+					},
+					"db_name": {
+						"type": "string"
+					},
+					"key_vault_url": {
+						"type": "string"
+					},
+					"schema_name": {
+						"type": "string"
+					},
+					"table_name": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "Load_Types"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": {
+						"value": "@dataset().schema_name",
+						"type": "Expression"
+					},
+					"table": {
+						"value": "@dataset().table_name",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_mssql_server_connection')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_data_load_status_tracker')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_mssql_server_connection",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"db_server_name": {
+							"value": "@dataset().db_server_name",
+							"type": "Expression"
+						},
+						"db_user_name": {
+							"value": "@dataset().db_user_name",
+							"type": "Expression"
+						},
+						"db_password_secret_key": {
+							"value": "@dataset().db_password_secret_key",
+							"type": "Expression"
+						},
+						"db_name": {
+							"value": "@dataset().db_name",
+							"type": "Expression"
+						},
+						"key_vault_url": {
+							"value": "@dataset().key_vault_url",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"db_server_name": {
+						"type": "string"
+					},
+					"db_user_name": {
+						"type": "string"
+					},
+					"db_password_secret_key": {
+						"type": "string"
+					},
+					"db_name": {
+						"type": "string"
+					},
+					"key_vault_url": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "Data_Load_Tracker"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "master_load_status_tracker"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_mssql_server_connection')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_source_copy_recent_file')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_adls_gen2_connection",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"adls_source_url": {
+							"value": "@dataset().adls_source_url",
+							"type": "Expression"
+						},
+						"key_vault_url": {
+							"value": "@dataset().key_vault_url",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"adls_source_url": {
+						"type": "string"
+					},
+					"key_vault_url": {
+						"type": "string"
+					},
+					"FileName": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "Copy_Recent_Files"
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().FileName",
+							"type": "Expression"
+						},
+						"fileSystem": "source"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_adls_gen2_connection')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_source_csv_copy_files')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_adls_gen2_connection",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"adls_source_url": {
+							"value": "@dataset().adls_source_url",
+							"type": "Expression"
+						},
+						"key_vault_url": {
+							"value": "@dataset().key_vault_url",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"adls_source_url": {
+						"type": "string"
+					},
+					"key_vault_url": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "Copy_CSV_Files"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "source"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_adls_gen2_connection')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_source_csv_file')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_adls_gen2_connection",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"adls_source_url": {
+							"value": "@dataset().adls_source_url",
+							"type": "Expression"
+						},
+						"key_vault_url": {
+							"value": "@dataset().key_vault_url",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"FileName": {
+						"type": "string"
+					},
+					"adls_source_url": {
+						"type": "string"
+					},
+					"key_vault_url": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "Copy_CSV_Files"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().FileName",
+							"type": "Expression"
+						},
+						"fileSystem": "source"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_adls_gen2_connection')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_source_mssql_query_data')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_mssql_server_connection",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"db_server_name": {
+							"value": "@dataset().db_server_name",
+							"type": "Expression"
+						},
+						"db_user_name": {
+							"value": "@dataset().db_user_name",
+							"type": "Expression"
+						},
+						"db_password_secret_key": {
+							"value": "@dataset().db_password_secret_key",
+							"type": "Expression"
+						},
+						"db_name": {
+							"value": "@dataset().db_name",
+							"type": "Expression"
+						},
+						"key_vault_url": {
+							"value": "@dataset().key_vault_url",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"db_server_name": {
+						"type": "string"
+					},
+					"db_user_name": {
+						"type": "string"
+					},
+					"db_password_secret_key": {
+						"type": "string"
+					},
+					"db_name": {
+						"type": "string"
+					},
+					"key_vault_url": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "Load_Types"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "",
+					"table": ""
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_mssql_server_connection')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_src_ipl_teams_table')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_mssql_server_connection",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"db_server_name": {
+							"value": "@dataset().db_server_name",
+							"type": "Expression"
+						},
+						"db_user_name": {
+							"value": "@dataset().db_user_name",
+							"type": "Expression"
+						},
+						"db_password_secret_key": {
+							"value": "@dataset().db_password_secret_key",
+							"type": "Expression"
+						},
+						"db_name": {
+							"value": "@dataset().db_name",
+							"type": "Expression"
+						},
+						"key_vault_url": {
+							"value": "@dataset().key_vault_url",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"db_server_name": {
+						"type": "string"
+					},
+					"db_user_name": {
+						"type": "string"
+					},
+					"db_password_secret_key": {
+						"type": "string"
+					},
+					"db_name": {
+						"type": "string"
+					},
+					"key_vault_url": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "Copy_Delete_Archive"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "ipl_teams"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_mssql_server_connection')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_target_copy_recent_file')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_adls_gen2_connection",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"adls_source_url": {
+							"value": "@dataset().adls_source_url",
+							"type": "Expression"
+						},
+						"key_vault_url": {
+							"value": "@dataset().key_vault_url",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"adls_source_url": {
+						"type": "string"
+					},
+					"key_vault_url": {
+						"type": "string"
+					},
+					"FileName": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "Copy_Recent_Files"
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().FileName",
+							"type": "Expression"
+						},
+						"folderPath": "CopyRecentFiles",
+						"fileSystem": "target"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_adls_gen2_connection')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_target_csv_file')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_adls_gen2_connection",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"adls_source_url": {
+							"value": "@dataset().adls_source_url",
+							"type": "Expression"
+						},
+						"key_vault_url": {
+							"value": "@dataset().key_vault_url",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"adls_source_url": {
+						"type": "string"
+					},
+					"key_vault_url": {
+						"type": "string"
+					},
+					"FileName": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "Copy_CSV_Files"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().FileName",
+							"type": "Expression"
+						},
+						"folderPath": "copyCSVFiles",
+						"fileSystem": "target"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_adls_gen2_connection')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_target_ipl_teams_table')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_mssql_server_connection",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"db_server_name": {
+							"value": "@dataset().db_server_name",
+							"type": "Expression"
+						},
+						"db_user_name": {
+							"value": "@dataset().db_user_name",
+							"type": "Expression"
+						},
+						"db_password_secret_key": {
+							"value": "@dataset().db_password_secret_key",
+							"type": "Expression"
+						},
+						"db_name": {
+							"value": "@dataset().db_name",
+							"type": "Expression"
+						},
+						"key_vault_url": {
+							"value": "@dataset().key_vault_url",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"db_server_name": {
+						"type": "string"
+					},
+					"db_user_name": {
+						"type": "string"
+					},
+					"db_password_secret_key": {
+						"type": "string"
+					},
+					"db_name": {
+						"type": "string"
+					},
+					"key_vault_url": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "Copy_Delete_Archive"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "ipl_teams"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_mssql_server_connection')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_users_api_json_data')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_adls_gen2_connection",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"adls_source_url": {
+							"value": "@dataset().adls_source_url",
+							"type": "Expression"
+						},
+						"key_vault_url": {
+							"value": "@dataset().key_vault_url",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"adls_source_url": {
+						"type": "string"
+					},
+					"key_vault_url": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "Web_API_Output_File"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "users_output.json",
+						"folderPath": "web_api_output",
+						"fileSystem": "target"
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_adls_gen2_connection')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_copy_delete_and_archive_table')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy IPL teams data",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"writeBehavior": "insert",
+								"sqlWriterUseTableLock": false,
+								"tableOption": "autoCreate",
+								"disableMetricsCollection": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "ds_src_ipl_teams_table",
+								"type": "DatasetReference",
+								"parameters": {
+									"db_server_name": {
+										"value": "@pipeline().globalParameters.sql_source_server_name",
+										"type": "Expression"
+									},
+									"db_user_name": {
+										"value": "@pipeline().globalParameters.sql_source_server_username",
+										"type": "Expression"
+									},
+									"db_password_secret_key": {
+										"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
+										"type": "Expression"
+									},
+									"db_name": {
+										"value": "@pipeline().globalParameters.sql_source_database_name",
+										"type": "Expression"
+									},
+									"key_vault_url": {
+										"value": "@pipeline().globalParameters.key_vault_url",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "ds_target_ipl_teams_table",
+								"type": "DatasetReference",
+								"parameters": {
+									"db_server_name": {
+										"value": "@pipeline().globalParameters.sql_target_server_name",
+										"type": "Expression"
+									},
+									"db_user_name": {
+										"value": "@pipeline().globalParameters.sql_target_server_username",
+										"type": "Expression"
+									},
+									"db_password_secret_key": {
+										"value": "@pipeline().globalParameters.sql_target_server_password_secret_key",
+										"type": "Expression"
+									},
+									"db_name": {
+										"value": "@pipeline().globalParameters.sql_target_database_name",
+										"type": "Expression"
+									},
+									"key_vault_url": {
+										"value": "@pipeline().globalParameters.key_vault_url",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "Archive and Delete table",
+						"type": "Script",
+						"dependsOn": [
+							{
+								"activity": "Set Archive Tablename",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"linkedServiceName": {
+							"referenceName": "ls_mssql_server_connection",
+							"type": "LinkedServiceReference",
+							"parameters": {
+								"db_server_name": {
+									"value": "@pipeline().globalParameters.sql_source_server_name",
+									"type": "Expression"
+								},
+								"db_user_name": {
+									"value": "@pipeline().globalParameters.sql_source_server_username",
+									"type": "Expression"
+								},
+								"db_password_secret_key": {
+									"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
+									"type": "Expression"
+								},
+								"db_name": {
+									"value": "@pipeline().globalParameters.sql_source_database_name",
+									"type": "Expression"
+								},
+								"key_vault_url": {
+									"value": "@pipeline().globalParameters.key_vault_url",
+									"type": "Expression"
+								}
+							}
+						},
+						"typeProperties": {
+							"scripts": [
+								{
+									"type": "NonQuery",
+									"text": {
+										"value": "CREATE TABLE @{variables('archive_table_name')}(\n    id INT PRIMARY KEY,\n    name VARCHAR(100),\n    team VARCHAR(100),\n    score BIGINT,\n    matches_played INT,\n    last_updated DATETIME2\n);",
+										"type": "Expression"
+									}
+								},
+								{
+									"type": "NonQuery",
+									"text": {
+										"value": "INSERT INTO @{variables('archive_table_name')} SELECT * FROM dbo.ipl_teams\n",
+										"type": "Expression"
+									}
+								},
+								{
+									"type": "NonQuery",
+									"text": "DROP TABLE dbo.ipl_teams"
+								}
+							],
+							"scriptBlockExecutionTimeout": "02:00:00"
+						}
+					},
+					{
+						"name": "Set Archive Tablename",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "Copy IPL teams data",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "archive_table_name",
+							"value": {
+								"value": "@concat(\n  'dbo.ipl_teams_',\n  formatDateTime(utcNow(),'yyyyMMddHHmmss')\n)",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"variables": {
+					"archive_table_name": {
+						"type": "String"
+					}
+				},
+				"folder": {
+					"name": "HandsOn"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_src_ipl_teams_table')]",
+				"[concat(variables('factoryId'), '/datasets/ds_target_ipl_teams_table')]",
+				"[concat(variables('factoryId'), '/linkedServices/ls_mssql_server_connection')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_custom_load')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Iterate Over Each Table",
+						"type": "ForEach",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@pipeline().parameters.table_list",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "Copy MSSQL Table Data",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"sqlReaderQuery": {
+												"value": "SELECT * FROM @{item().tableSchemaName}.@{item().tableName}\nWHERE @{item().Watermark_Column} > '@{formatDateTime(startOfDay(addDays(coalesce(pipeline().parameters.input_date, startOfDay(utcNow())), -7)), 'yyyy-MM-dd')}' AND @{item().Watermark_Column} <= '@{formatDateTime(coalesce(concat(pipeline().parameters.input_date, 'T23:59:59'), utcNow()), 'yyyy-MM-ddTHH:mm:ss')}'",
+												"type": "Expression"
+											},
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"sink": {
+											"type": "AzureSqlSink",
+											"preCopyScript": {
+												"value": "DELETE FROM @{item().tableSchemaName}.@{item().tableName}\nWHERE CAST(@{item().Watermark_Column} AS DATE) > '@{formatDateTime(addDays(coalesce(pipeline().parameters.input_date, utcNow()), -7), 'yyyy-MM-dd')}' AND CAST(@{item().Watermark_Column} AS DATE) <= '@{formatDateTime(coalesce(pipeline().parameters.input_date, utcNow()), 'yyyy-MM-dd')}'",
+												"type": "Expression"
+											},
+											"writeBehavior": "upsert",
+											"upsertSettings": {
+												"useTempDB": true,
+												"keys": [
+													"id"
+												]
+											},
+											"sqlWriterUseTableLock": false,
+											"disableMetricsCollection": false
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "ds_copy_data",
+											"type": "DatasetReference",
+											"parameters": {
+												"db_server_name": {
+													"value": "@pipeline().globalParameters.sql_source_server_name",
+													"type": "Expression"
+												},
+												"db_user_name": {
+													"value": "@pipeline().globalParameters.sql_source_server_username",
+													"type": "Expression"
+												},
+												"db_password_secret_key": {
+													"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
+													"type": "Expression"
+												},
+												"db_name": {
+													"value": "@pipeline().globalParameters.sql_source_database_name",
+													"type": "Expression"
+												},
+												"key_vault_url": {
+													"value": "@pipeline().globalParameters.key_vault_url",
+													"type": "Expression"
+												},
+												"schema_name": {
+													"value": "@item().tableSchemaName",
+													"type": "Expression"
+												},
+												"table_name": {
+													"value": "@item().tableName",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "ds_copy_data",
+											"type": "DatasetReference",
+											"parameters": {
+												"db_server_name": {
+													"value": "@pipeline().globalParameters.sql_target_server_name",
+													"type": "Expression"
+												},
+												"db_user_name": {
+													"value": "@pipeline().globalParameters.sql_target_server_username",
+													"type": "Expression"
+												},
+												"db_password_secret_key": {
+													"value": "@pipeline().globalParameters.sql_target_server_password_secret_key",
+													"type": "Expression"
+												},
+												"db_name": {
+													"value": "@pipeline().globalParameters.sql_target_database_name",
+													"type": "Expression"
+												},
+												"key_vault_url": {
+													"value": "@pipeline().globalParameters.key_vault_url",
+													"type": "Expression"
+												},
+												"schema_name": {
+													"value": "@item().tableSchemaName",
+													"type": "Expression"
+												},
+												"table_name": {
+													"value": "@item().tableName",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"table_list": {
+						"type": "array",
+						"defaultValue": [
+							{
+								"tableName": "iplteams_last7days",
+								"tableSchemaName": "dbo",
+								"Watermark_Column": "last_updated"
+							}
+						]
+					},
+					"input_date": {
+						"type": "string",
+						"defaultValue": null
+					}
+				},
+				"folder": {
+					"name": "Load_Types"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_copy_data')]"
+			]
+		}
+	]
+}

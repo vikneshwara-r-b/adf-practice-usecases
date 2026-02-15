@@ -1,0 +1,118 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "adf-de-pipeline-20260201"
+		},
+		"ls_adls_gen2_connection_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "@{linkedService().adls_source_url}"
+		},
+		"ls_jsonplaceholder_API_connection_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://jsonplaceholder.typicode.com"
+		},
+		"ls_kv_connection_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "@{linkedService().key_vault_url}"
+		},
+		"ls_mssql_server_connection_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "@{linkedService().db_server_name}"
+		},
+		"ls_mssql_server_connection_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "@{linkedService().db_name}"
+		},
+		"ls_mssql_server_connection_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "@{linkedService().db_user_name}"
+		},
+		"tumbling_window_practice_properties_pipeline_parameters_start_date": {
+			"type": "string",
+			"defaultValue": "@trigger().outputs.windowStartTime"
+		},
+		"tumbling_window_practice_properties_pipeline_parameters_end_date": {
+			"type": "string",
+			"defaultValue": "@trigger().outputs.windowEndTime"
+		},
+		"containerUri": {
+			"type": "string",
+			"metadata": "URI to storage account containing linked ARM templates"
+		},
+		"containerSasToken": {
+			"type": "string",
+			"metadata": "Sas token to storage account containing linked ARM templates"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "adf-de-pipeline-20260201_ArmTemplate_0",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2024-03-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_0.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
+					"ls_jsonplaceholder_API_connection_properties_typeProperties_url": {
+						"value": "[parameters('ls_jsonplaceholder_API_connection_properties_typeProperties_url')]"
+					},
+					"ls_kv_connection_properties_typeProperties_baseUrl": {
+						"value": "[parameters('ls_kv_connection_properties_typeProperties_baseUrl')]"
+					},
+					"ls_adls_gen2_connection_properties_typeProperties_url": {
+						"value": "[parameters('ls_adls_gen2_connection_properties_typeProperties_url')]"
+					},
+					"ls_mssql_server_connection_properties_typeProperties_server": {
+						"value": "[parameters('ls_mssql_server_connection_properties_typeProperties_server')]"
+					},
+					"ls_mssql_server_connection_properties_typeProperties_database": {
+						"value": "[parameters('ls_mssql_server_connection_properties_typeProperties_database')]"
+					},
+					"ls_mssql_server_connection_properties_typeProperties_userName": {
+						"value": "[parameters('ls_mssql_server_connection_properties_typeProperties_userName')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "adf-de-pipeline-20260201_ArmTemplate_1",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2024-03-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_1.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
+					"tumbling_window_practice_properties_pipeline_parameters_start_date": {
+						"value": "[parameters('tumbling_window_practice_properties_pipeline_parameters_start_date')]"
+					},
+					"tumbling_window_practice_properties_pipeline_parameters_end_date": {
+						"value": "[parameters('tumbling_window_practice_properties_pipeline_parameters_end_date')]"
+					}
+				}
+			},
+			"dependsOn": [
+				"[resourceId('Microsoft.Resources/deployments', 'adf-de-pipeline-20260201_ArmTemplate_0')]"
+			]
+		}
+	]
+}

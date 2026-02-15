@@ -1,0 +1,39 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "adf-de-pipeline-20260201"
+		},
+		"ls_adls_gen2_connection_properties_typeProperties_url": {
+			"value": "@{linkedService().adls_source_url}"
+		},
+		"ls_jsonplaceholder_API_connection_properties_typeProperties_url": {
+			"value": "https://jsonplaceholder.typicode.com"
+		},
+		"ls_kv_connection_properties_typeProperties_baseUrl": {
+			"value": "@{linkedService().key_vault_url}"
+		},
+		"ls_mssql_server_connection_properties_typeProperties_server": {
+			"value": "@{linkedService().db_server_name}"
+		},
+		"ls_mssql_server_connection_properties_typeProperties_database": {
+			"value": "@{linkedService().db_name}"
+		},
+		"ls_mssql_server_connection_properties_typeProperties_userName": {
+			"value": "@{linkedService().db_user_name}"
+		},
+		"tumbling_window_practice_properties_pipeline_parameters_start_date": {
+			"value": "@trigger().outputs.windowStartTime"
+		},
+		"tumbling_window_practice_properties_pipeline_parameters_end_date": {
+			"value": "@trigger().outputs.windowEndTime"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}
