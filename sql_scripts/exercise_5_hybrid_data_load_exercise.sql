@@ -114,8 +114,8 @@ CREATE TABLE dbo.watermarktable (
 
 INSERT INTO dbo.watermarktable (SchemaName, TableName, WatermarkValue)
 VALUES
-('dbo' ,'employees', '2024-01-01 23:59:59'),
-('dbo' ,'salesitems', '2024-01-01 23:59:59');
+('dbo' ,'employees', '2024-01-01 00:00:00'),
+('dbo' ,'salesitems', '2024-01-01 00:00:00');
 
 SELECT * FROM dbo.watermarktable;
 
@@ -127,7 +127,7 @@ DROP TABLE dbo.watermarktable;
 
 -- Old Watermark logic ADF Expression
 SELECT WatermarkValue FROM dbo.watermarktable
-WHERE TableName = '@{item().tableName}';
+WHERE SchemaName = '@{item().tableSchemaName}' AND TableName = '@{item().tableName}';
 
 -- New Watermark logic ADF Expression
 SELECT MAX(@{item().Watermark_Column}) AS NewWatermarkValue
@@ -160,6 +160,13 @@ END;
 DROP PROCEDURE [dbo].[usp_write_watermark];
 
 
+
+/*Update few records in existing data*/
+UPDATE employees
+SET salary = salary + 3000,
+    last_updated = '2026-02-12'
+WHERE last_updated >= '2025-12-10';
+
 /* Inserting incremental data*/
 INSERT INTO employees (id, name, dep, salary, last_updated)
 VALUES
@@ -169,11 +176,13 @@ VALUES
 (24,'Ramesh','Marketing',62000,'2026-02-07'),
 (25,'Nandini','IT',70500,'2026-02-06');
 
-UPDATE employees
-SET salary = salary + 3000,
-    last_updated = '2026-02-10'
+/*Update few records in existing data*/
+UPDATE salesitems
+SET solditems = solditems + 5,
+    last_updated = '2026-02-12'
 WHERE last_updated >= '2025-12-10';
 
+/* Inserting incremental data*/
 INSERT INTO salesitems (id, item, salesman, location, solditems, last_updated)
 VALUES
 (21,'Smartphone','Harish','Hyderabad',15,'2026-02-10'),
@@ -182,7 +191,4 @@ VALUES
 (24,'External HDD','Ramesh','Chennai',8,'2026-02-07'),
 (25,'Bluetooth Speaker','Nandini','Bangalore',12,'2026-02-06');
 
-UPDATE salesitems
-SET solditems = solditems + 5,
-    last_updated = '2026-02-10'
-WHERE last_updated >= '2025-12-10';
+

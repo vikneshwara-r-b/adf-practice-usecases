@@ -37,4 +37,7 @@ VALUES
 SELECT * FROM iplteams_Last7days
 WHERE CAST(last_updated as DATE) > '2026-02-03' and CAST(last_updated AS DATE) <= '2026-02-10';
 
+SELECT * FROM iplteams_Last7days
+WHERE last_updated > '2026-02-03' and last_updated <= '2026-02-10 23:59:59';
+
 DELETE FROM iplteams_Last7days;
