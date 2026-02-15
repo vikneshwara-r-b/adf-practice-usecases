@@ -2,7 +2,7 @@
 	"name": "tumbling_window_practice",
 	"properties": {
 		"annotations": [],
-		"runtimeState": "Stopped",
+		"runtimeState": "Started",
 		"pipeline": {
 			"pipelineReference": {
 				"referenceName": "pl_tumbling_window",
