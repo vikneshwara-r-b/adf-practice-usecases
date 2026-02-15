@@ -100,8 +100,6 @@
 						{
 							"name": "Delete Source File",
 							"type": "Delete",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Update Old Watermark Table",
@@ -148,7 +146,7 @@
 											}
 										}
 									},
-									"path": "sap-source-archive"
+									"path": "archive/sap_source"
 								},
 								"enableLogging": true,
 								"storeSettings": {
@@ -165,8 +163,6 @@
 						{
 							"name": "Delete Raw File",
 							"type": "Delete",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Update Old Watermark Table",
@@ -213,7 +209,7 @@
 											}
 										}
 									},
-									"path": "sap-raw-archive"
+									"path": "archive/sap_raw"
 								},
 								"enableLogging": true,
 								"storeSettings": {
