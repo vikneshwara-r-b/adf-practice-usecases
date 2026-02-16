@@ -1,5 +1,5 @@
 {
-	"name": "ds_sap_raw_csv_file",
+	"name": "ds_sap_raw_csv_folder",
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "ls_adls_gen2_connection",
@@ -21,6 +21,9 @@
 			},
 			"key_vault_url": {
 				"type": "string"
+			},
+			"folder_name": {
+				"type": "string"
 			}
 		},
 		"folder": {
@@ -31,7 +34,10 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobFSLocation",
-				"folderPath": "sap_raw",
+				"folderPath": {
+					"value": "sap_raw/@{dataset().folder_name}",
+					"type": "Expression"
+				},
 				"fileSystem": "source"
 			},
 			"columnDelimiter": ",",
