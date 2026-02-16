@@ -5,11 +5,18 @@
 			{
 				"name": "Iterate Each Table Name",
 				"type": "ForEach",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "Evaluate on load_vbrk_flag",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"userProperties": [],
 				"typeProperties": {
 					"items": {
-						"value": "@pipeline().parameters.tablelist",
+						"value": "@variables('valid_table_list')",
 						"type": "Expression"
 					},
 					"activities": [
@@ -644,6 +651,60 @@
 						}
 					]
 				}
+			},
+			{
+				"name": "Evaluate on load_vbrk_flag",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@pipeline().parameters.load_vbrk_flag",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Populate metadata for all tables",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "valid_table_list",
+								"value": {
+									"value": "@pipeline().parameters.tablelist",
+									"type": "Expression"
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Populate metadata for VBRK tables",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "valid_table_list",
+								"value": [
+									"{\n    \"tableName\": \"VBRK\"",
+									"\n    \"tableSchemaName\": \"dbo\"",
+									"\n    \"Watermark_Column\": \"last_updated\"\n  }",
+									"\n  {\n    \"tableName\": \"VBAP\"",
+									"\n    \"tableSchemaName\": \"dbo\"",
+									"\n    \"Watermark_Column\": \"last_updated\"\n  }"
+								]
+							}
+						}
+					]
+				}
 			}
 		],
 		"parameters": {
@@ -656,6 +717,15 @@
 						"Watermark_Column": "last_updated"
 					}
 				]
+			},
+			"load_vbrk_flag": {
+				"type": "bool",
+				"defaultValue": false
+			}
+		},
+		"variables": {
+			"valid_table_list": {
+				"type": "Array"
 			}
 		},
 		"folder": {
