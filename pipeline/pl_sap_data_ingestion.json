@@ -116,11 +116,11 @@
 							]
 						},
 						{
-							"name": "Delete Source File",
+							"name": "Delete Source Files",
 							"type": "Delete",
 							"dependsOn": [
 								{
-									"activity": "Update Old Watermark Table",
+									"activity": "Copy Source files to Archive",
 									"dependencyConditions": [
 										"Succeeded"
 									]
@@ -168,7 +168,7 @@
 											}
 										}
 									},
-									"path": "archive/sap_source"
+									"path": "source/sap_source/delete_activity_logs"
 								},
 								"enableLogging": true,
 								"storeSettings": {
@@ -179,11 +179,11 @@
 							}
 						},
 						{
-							"name": "Delete Raw File",
+							"name": "Delete Raw Files",
 							"type": "Delete",
 							"dependsOn": [
 								{
-									"activity": "Update Old Watermark Table",
+									"activity": "Copy Raw files to Archive",
 									"dependencyConditions": [
 										"Succeeded"
 									]
@@ -231,7 +231,7 @@
 											}
 										}
 									},
-									"path": "archive/sap_raw"
+									"path": "source/sap_raw/delete_activity_logs"
 								},
 								"enableLogging": true,
 								"storeSettings": {
@@ -244,6 +244,8 @@
 						{
 							"name": "Copy Raw to Bronze - Full Load",
 							"type": "Copy",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Copy Source to Raw",
@@ -360,6 +362,8 @@
 						{
 							"name": "Get Old Watermark Value",
 							"type": "Lookup",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Copy Raw to Bronze - Full Load",
@@ -417,6 +421,8 @@
 						{
 							"name": "Get New Watermark Value",
 							"type": "Lookup",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Copy Raw to Bronze - Full Load",
@@ -474,6 +480,8 @@
 						{
 							"name": "Copy Bronze to Silver - Incremental Load",
 							"type": "Copy",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Get Old Watermark Value",
@@ -598,6 +606,8 @@
 						{
 							"name": "Update Old Watermark Table",
 							"type": "SqlServerStoredProcedure",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Copy Bronze to Silver - Incremental Load",
@@ -666,6 +676,201 @@
 									}
 								}
 							}
+						},
+						{
+							"name": "Copy Source files to Archive",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Update Old Watermark Table",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"wildcardFolderPath": "sap_source/@{item().tableName}",
+										"wildcardFileName": "*.csv",
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "PreserveHierarchy"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_sap_source_csv_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"adls_source_url": {
+											"value": "@pipeline().globalParameters.adls_source_url",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"folder_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_sap_archive_source_csv_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"adls_source_url": {
+											"value": "@pipeline().globalParameters.adls_source_url",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"folder_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Copy Raw files to Archive",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Update Old Watermark Table",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"wildcardFolderPath": {
+											"value": "sap_raw/@{item().tableName}",
+											"type": "Expression"
+										},
+										"wildcardFileName": "*.csv",
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "PreserveHierarchy"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".csv"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_sap_raw_csv_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"adls_source_url": {
+											"value": "@pipeline().globalParameters.adls_source_url",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"folder_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_sap_archive_raw_csv_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"adls_source_url": {
+											"value": "@pipeline().globalParameters.adls_source_url",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"folder_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								}
+							]
 						}
 					]
 				}
