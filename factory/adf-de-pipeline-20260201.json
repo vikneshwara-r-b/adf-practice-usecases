@@ -41,6 +41,10 @@
 			"sql_target_server_username": {
 				"type": "string",
 				"value": "sqladmin"
+			},
+			"sql_sap_source_database_name": {
+				"type": "string",
+				"value": "sql_prod_sap_source"
 			}
 		}
 	},
