@@ -7,7 +7,7 @@
 				"type": "ForEach",
 				"dependsOn": [
 					{
-						"activity": "Evaluate on load_vbrk_flag",
+						"activity": "Check For Valid Source Files",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -16,7 +16,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"items": {
-						"value": "@variables('valid_table_list')",
+						"value": "@variables('expected_tables')",
 						"type": "Expression"
 					},
 					"activities": [
@@ -892,9 +892,9 @@
 							},
 							"userProperties": [],
 							"typeProperties": {
-								"variableName": "valid_table_list",
+								"variableName": "input_tables",
 								"value": {
-									"value": "@pipeline().parameters.tablelist",
+									"value": "@pipeline().parameters.master_tables",
 									"type": "Expression"
 								}
 							}
@@ -911,7 +911,7 @@
 							},
 							"userProperties": [],
 							"typeProperties": {
-								"variableName": "valid_table_list",
+								"variableName": "input_tables",
 								"value": [
 									{
 										"tableName": "VBRK",
@@ -928,10 +928,131 @@
 						}
 					]
 				}
+			},
+			{
+				"name": "Check For Valid Source Files",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Evaluate on load_vbrk_flag",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('input_tables')",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Get Metadata of Source Folder",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "ds_sap_source_csv_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"adls_source_url": {
+											"value": "@pipeline().globalParameters.adls_source_url",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"folder_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								},
+								"fieldList": [
+									"childItems"
+								],
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							}
+						},
+						{
+							"name": "Check If data load needed",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "Filter CSV files",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@greater(length(activity('Filter CSV files').output.Value), 0)",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "Append table metadata",
+										"type": "AppendVariable",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "expected_tables",
+											"value": {
+												"value": "@item()",
+												"type": "Expression"
+											}
+										}
+									}
+								]
+							}
+						},
+						{
+							"name": "Filter CSV files",
+							"type": "Filter",
+							"dependsOn": [
+								{
+									"activity": "Get Metadata of Source Folder",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"items": {
+									"value": "@activity('Get Metadata of Source Folder').output.childItems",
+									"type": "Expression"
+								},
+								"condition": {
+									"value": "@contains(item().name, '.csv')",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
 			}
 		],
 		"parameters": {
-			"tablelist": {
+			"master_tables": {
 				"type": "array",
 				"defaultValue": [
 					{
@@ -967,7 +1088,10 @@
 			}
 		},
 		"variables": {
-			"valid_table_list": {
+			"expected_tables": {
+				"type": "Array"
+			},
+			"input_tables": {
 				"type": "Array"
 			}
 		},
