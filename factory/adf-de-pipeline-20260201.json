@@ -45,6 +45,10 @@
 			"sql_sap_source_database_name": {
 				"type": "string",
 				"value": "sql_prod_sap_source"
+			},
+			"sql_sap_target_database_name": {
+				"type": "string",
+				"value": "sql_prod_sap_target"
 			}
 		}
 	},
