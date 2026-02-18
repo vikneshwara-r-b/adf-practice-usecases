@@ -660,7 +660,7 @@
 										"type": "Expression"
 									},
 									"db_name": {
-										"value": "@pipeline().globalParameters.sql_source_server_name",
+										"value": "@pipeline().globalParameters.sql_sap_source_database_name",
 										"type": "Expression"
 									},
 									"key_vault_url": {
