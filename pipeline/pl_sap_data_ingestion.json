@@ -244,8 +244,6 @@
 						{
 							"name": "Copy Raw to Bronze - Full Load",
 							"type": "Copy",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Copy Source to Raw",
@@ -362,8 +360,6 @@
 						{
 							"name": "Get Old Watermark Value",
 							"type": "Lookup",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Copy Raw to Bronze - Full Load",
@@ -421,8 +417,6 @@
 						{
 							"name": "Get New Watermark Value",
 							"type": "Lookup",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Copy Raw to Bronze - Full Load",
@@ -480,8 +474,6 @@
 						{
 							"name": "Copy Bronze to Silver - Incremental Load",
 							"type": "Copy",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Get Old Watermark Value",
@@ -606,8 +598,6 @@
 						{
 							"name": "Update Old Watermark Table",
 							"type": "SqlServerStoredProcedure",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Copy Bronze to Silver - Incremental Load",
@@ -882,7 +872,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@pipeline().parameters.load_vbrk_flag",
+						"value": "@pipeline().parameters.load_vbrk_only_flag",
 						"type": "Expression"
 					},
 					"ifFalseActivities": [
@@ -965,7 +955,7 @@
 					}
 				]
 			},
-			"load_vbrk_flag": {
+			"load_vbrk_only_flag": {
 				"type": "bool",
 				"defaultValue": false
 			}
