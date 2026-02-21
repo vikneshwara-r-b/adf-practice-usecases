@@ -1,0 +1,50 @@
+{
+	"name": "ds_sap_source_csv_folder",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_adls_gen2_connection",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"adls_source_url": {
+					"value": "@dataset().adls_source_url",
+					"type": "Expression"
+				},
+				"key_vault_url": {
+					"value": "@dataset().key_vault_url",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"adls_source_url": {
+				"type": "string"
+			},
+			"key_vault_url": {
+				"type": "string"
+			},
+			"folder_name": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "CapStone_Usecase"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": {
+					"value": "sap_source/@{dataset().folder_name}",
+					"type": "Expression"
+				},
+				"fileSystem": "source"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	}
+}

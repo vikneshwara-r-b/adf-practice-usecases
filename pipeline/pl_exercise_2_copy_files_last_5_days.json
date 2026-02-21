@@ -30,11 +30,11 @@
 						}
 					},
 					"fieldList": [
-						"childItems"
+						"childItems",
+						"itemType"
 					],
 					"storeSettings": {
-						"type": "AzureBlobStorageReadSettings",
-						"recursive": true,
+						"type": "AzureBlobFSReadSettings",
 						"enablePartitionDiscovery": false
 					},
 					"formatSettings": {
@@ -47,7 +47,7 @@
 				"type": "ForEach",
 				"dependsOn": [
 					{
-						"activity": "Get Metadata of Source ADLS Container",
+						"activity": "Filter Only Files",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -56,7 +56,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"items": {
-						"value": "@activity('Get Metadata of Source ADLS Container').output.childItems",
+						"value": "@activity('Filter Only Files').output.Value",
 						"type": "Expression"
 					},
 					"isSequential": true,
@@ -96,8 +96,7 @@
 									"lastModified"
 								],
 								"storeSettings": {
-									"type": "AzureBlobStorageReadSettings",
-									"recursive": true,
+									"type": "AzureBlobFSReadSettings",
 									"enablePartitionDiscovery": false
 								},
 								"formatSettings": {
@@ -257,6 +256,29 @@
 							}
 						}
 					]
+				}
+			},
+			{
+				"name": "Filter Only Files",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "Get Metadata of Source ADLS Container",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Metadata of Source ADLS Container').output.childItems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@equals(item().type, 'File')",
+						"type": "Expression"
+					}
 				}
 			}
 		],
