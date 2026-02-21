@@ -164,7 +164,7 @@
 								"sink": {
 									"type": "AzureSqlSink",
 									"preCopyScript": {
-										"value": "DELETE FROM @{item().tableSchemaName}.@{item().tableName}\nWHERE CAST(@{item().Watermark_Column} AS DATE) > '@{formatDateTime(getPastTime(2, 'Month'), 'yyyy-MM-dd')}'\nAND CAST(@{item().Watermark_Column} AS DATE) <= '@{formatDateTime(utcNow(), 'yyyy-MM-dd')}'",
+										"value": "DELETE FROM @{item().tableSchemaName}.@{item().tableName}\nWHERE @{item().Watermark_Column} > '@{formatDateTime(startOfDay(getPastTime(2, 'Month')), 'yyyy-MM-ddTHH:mm:ss')}'",
 										"type": "Expression"
 									},
 									"writeBehavior": "upsert",

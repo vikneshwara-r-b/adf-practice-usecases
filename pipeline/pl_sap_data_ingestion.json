@@ -1,0 +1,1103 @@
+{
+	"name": "pl_sap_data_ingestion",
+	"properties": {
+		"activities": [
+			{
+				"name": "Iterate Each Table Name",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Check For Valid Source Files",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('expected_tables')",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Copy Source to Raw",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"wildcardFolderPath": {
+											"value": "sap_source/@{item().tableName}",
+											"type": "Expression"
+										},
+										"wildcardFileName": {
+											"value": "*.csv",
+											"type": "Expression"
+										},
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "PreserveHierarchy"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".csv"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_sap_source_csv_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"adls_source_url": {
+											"value": "@pipeline().globalParameters.adls_source_url",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"folder_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_sap_raw_csv_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"adls_source_url": {
+											"value": "@pipeline().globalParameters.adls_source_url",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"folder_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Delete Source Files",
+							"type": "Delete",
+							"dependsOn": [
+								{
+									"activity": "Copy Source files to Archive",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "ds_sap_source_csv_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"adls_source_url": {
+											"value": "@pipeline().globalParameters.adls_source_url",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"folder_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								},
+								"logStorageSettings": {
+									"linkedServiceName": {
+										"referenceName": "ls_adls_gen2_connection",
+										"type": "LinkedServiceReference",
+										"parameters": {
+											"adls_source_url": {
+												"value": "@pipeline().globalParameters.adls_source_url",
+												"type": "Expression"
+											},
+											"key_vault_url": {
+												"value": "@pipeline().globalParameters.key_vault_url",
+												"type": "Expression"
+											}
+										}
+									},
+									"path": "source/sap_source/delete_activity_logs"
+								},
+								"enableLogging": true,
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								}
+							}
+						},
+						{
+							"name": "Delete Raw Files",
+							"type": "Delete",
+							"dependsOn": [
+								{
+									"activity": "Copy Raw files to Archive",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "ds_sap_raw_csv_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"adls_source_url": {
+											"value": "@pipeline().globalParameters.adls_source_url",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"folder_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								},
+								"logStorageSettings": {
+									"linkedServiceName": {
+										"referenceName": "ls_adls_gen2_connection",
+										"type": "LinkedServiceReference",
+										"parameters": {
+											"adls_source_url": {
+												"value": "@pipeline().globalParameters.adls_source_url",
+												"type": "Expression"
+											},
+											"key_vault_url": {
+												"value": "@pipeline().globalParameters.key_vault_url",
+												"type": "Expression"
+											}
+										}
+									},
+									"path": "source/sap_raw/delete_activity_logs"
+								},
+								"enableLogging": true,
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								}
+							}
+						},
+						{
+							"name": "Copy Raw to Bronze - Full Load",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Copy Source to Raw",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"wildcardFolderPath": {
+											"value": "sap_raw/@{item().tableName}",
+											"type": "Expression"
+										},
+										"wildcardFileName": {
+											"value": "*.csv",
+											"type": "Expression"
+										},
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"preCopyScript": {
+										"value": "TRUNCATE TABLE @{item().tableSchemaName}.@{item().tableName}",
+										"type": "Expression"
+									},
+									"writeBehavior": "insert",
+									"sqlWriterUseTableLock": false,
+									"disableMetricsCollection": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_sap_raw_csv_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"adls_source_url": {
+											"value": "@pipeline().globalParameters.adls_source_url",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"folder_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_copy_data",
+									"type": "DatasetReference",
+									"parameters": {
+										"db_server_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_name",
+											"type": "Expression"
+										},
+										"db_user_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_username",
+											"type": "Expression"
+										},
+										"db_password_secret_key": {
+											"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
+											"type": "Expression"
+										},
+										"db_name": {
+											"value": "@pipeline().globalParameters.sql_sap_source_database_name",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"schema_name": {
+											"value": "@item().tableSchemaName",
+											"type": "Expression"
+										},
+										"table_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Get Old Watermark Value",
+							"type": "Lookup",
+							"dependsOn": [
+								{
+									"activity": "Copy Raw to Bronze - Full Load",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "SELECT CASE WHEN WatermarkValue <= '@{formatDateTime(startOfDay(getPastTime(3, 'Week')), 'yyyy-MM-ddTHH:mm:ss')}'\nTHEN WatermarkValue\nELSE '@{formatDateTime(startOfDay(getPastTime(3, 'Week')), 'yyyy-MM-ddTHH:mm:ss')}'\nEND AS WatermarkValue,\nPK_List\nFROM dbo.watermarktable\nWHERE SchemaName = '@{item().tableSchemaName}'\nAND TableName = '@{item().tableName}';",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "ds_source_mssql_query_data",
+									"type": "DatasetReference",
+									"parameters": {
+										"db_server_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_name",
+											"type": "Expression"
+										},
+										"db_user_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_username",
+											"type": "Expression"
+										},
+										"db_password_secret_key": {
+											"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
+											"type": "Expression"
+										},
+										"db_name": {
+											"value": "@pipeline().globalParameters.sql_sap_source_database_name",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										}
+									}
+								}
+							}
+						},
+						{
+							"name": "Get New Watermark Value",
+							"type": "Lookup",
+							"dependsOn": [
+								{
+									"activity": "Copy Raw to Bronze - Full Load",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "SELECT MAX(@{item().Watermark_Column}) AS NewWatermarkValue\nFROM @{item().tableSchemaName}.@{item().tableName};",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "ds_source_mssql_query_data",
+									"type": "DatasetReference",
+									"parameters": {
+										"db_server_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_name",
+											"type": "Expression"
+										},
+										"db_user_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_username",
+											"type": "Expression"
+										},
+										"db_password_secret_key": {
+											"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
+											"type": "Expression"
+										},
+										"db_name": {
+											"value": "@pipeline().globalParameters.sql_sap_source_database_name",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										}
+									}
+								}
+							}
+						},
+						{
+							"name": "Copy Bronze to Silver - Incremental Load",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Get Old Watermark Value",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Get New Watermark Value",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "SELECT * FROM @{item().tableSchemaName}.@{item().tableName}\nWHERE @{item().Watermark_Column} >= '@{formatDateTime(activity('Get Old Watermark Value').output.firstRow.WatermarkValue,'yyyy-MM-ddTHH:mm:ss')}' AND @{item().Watermark_Column} <= '@{formatDateTime(activity('Get New Watermark Value').output.firstRow.NewWatermarkValue,'yyyy-MM-ddTHH:mm:ss')}'",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"preCopyScript": {
+										"value": "DELETE FROM @{item().tableSchemaName}.@{item().tableName}\nWHERE @{item().Watermark_Column} >= '@{formatDateTime(startOfDay(getPastTime(3, 'Week')), 'yyyy-MM-ddTHH:mm:ss')}'",
+										"type": "Expression"
+									},
+									"writeBehavior": "upsert",
+									"upsertSettings": {
+										"useTempDB": true,
+										"keys": {
+											"value": "@split(activity('Get Old Watermark Value').output.firstRow.PK_List, ',')",
+											"type": "Expression"
+										}
+									},
+									"sqlWriterUseTableLock": false,
+									"disableMetricsCollection": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_source_mssql_query_data",
+									"type": "DatasetReference",
+									"parameters": {
+										"db_server_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_name",
+											"type": "Expression"
+										},
+										"db_user_name": {
+											"value": "@pipeline().globalParameters.sql_source_server_username",
+											"type": "Expression"
+										},
+										"db_password_secret_key": {
+											"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
+											"type": "Expression"
+										},
+										"db_name": {
+											"value": "@pipeline().globalParameters.sql_sap_source_database_name",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_copy_data",
+									"type": "DatasetReference",
+									"parameters": {
+										"db_server_name": {
+											"value": "@pipeline().globalParameters.sql_target_server_name",
+											"type": "Expression"
+										},
+										"db_user_name": {
+											"value": "@pipeline().globalParameters.sql_target_server_username",
+											"type": "Expression"
+										},
+										"db_password_secret_key": {
+											"value": "@pipeline().globalParameters.sql_target_server_password_secret_key",
+											"type": "Expression"
+										},
+										"db_name": {
+											"value": "@pipeline().globalParameters.sql_sap_target_database_name",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"schema_name": {
+											"value": "@item().tableSchemaName",
+											"type": "Expression"
+										},
+										"table_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Update Old Watermark Table",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "Copy Bronze to Silver - Incremental Load",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[dbo].[usp_write_watermark]",
+								"storedProcedureParameters": {
+									"last_updated": {
+										"value": {
+											"value": "@activity('Get New Watermark Value').output.firstRow.NewWatermarkValue",
+											"type": "Expression"
+										},
+										"type": "DateTime"
+									},
+									"SchemaName": {
+										"value": {
+											"value": "@item().tableSchemaName",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"tableName": {
+										"value": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										},
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "ls_mssql_server_connection",
+								"type": "LinkedServiceReference",
+								"parameters": {
+									"db_server_name": {
+										"value": "@pipeline().globalParameters.sql_source_server_name",
+										"type": "Expression"
+									},
+									"db_user_name": {
+										"value": "@pipeline().globalParameters.sql_source_server_username",
+										"type": "Expression"
+									},
+									"db_password_secret_key": {
+										"value": "@pipeline().globalParameters.sql_source_server_password_secret_key",
+										"type": "Expression"
+									},
+									"db_name": {
+										"value": "@pipeline().globalParameters.sql_sap_source_database_name",
+										"type": "Expression"
+									},
+									"key_vault_url": {
+										"value": "@pipeline().globalParameters.key_vault_url",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "Copy Source files to Archive",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Update Old Watermark Table",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"wildcardFolderPath": {
+											"value": "sap_source/@{item().tableName}",
+											"type": "Expression"
+										},
+										"wildcardFileName": "*.csv",
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "PreserveHierarchy"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".csv"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_sap_source_csv_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"adls_source_url": {
+											"value": "@pipeline().globalParameters.adls_source_url",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"folder_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_sap_archive_source_csv_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"adls_source_url": {
+											"value": "@pipeline().globalParameters.adls_source_url",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"folder_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Copy Raw files to Archive",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Update Old Watermark Table",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"wildcardFolderPath": {
+											"value": "sap_raw/@{item().tableName}",
+											"type": "Expression"
+										},
+										"wildcardFileName": "*.csv",
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "PreserveHierarchy"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".csv"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_sap_raw_csv_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"adls_source_url": {
+											"value": "@pipeline().globalParameters.adls_source_url",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"folder_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_sap_archive_raw_csv_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"adls_source_url": {
+											"value": "@pipeline().globalParameters.adls_source_url",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"folder_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "Evaluate on load_vbrk_flag",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@pipeline().parameters.load_vbrk_only_flag",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Populate metadata for all tables",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "input_tables",
+								"value": {
+									"value": "@pipeline().parameters.master_tables",
+									"type": "Expression"
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Populate metadata for VBRK tables",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "input_tables",
+								"value": [
+									{
+										"tableName": "VBRK",
+										"tableSchemaName": "dbo",
+										"Watermark_Column": "last_updated"
+									},
+									{
+										"tableName": "VBRK_SPPAYM",
+										"tableSchemaName": "dbo",
+										"Watermark_Column": "last_updated"
+									}
+								]
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Check For Valid Source Files",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Evaluate on load_vbrk_flag",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('input_tables')",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Get Metadata of Source Folder",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "ds_sap_source_csv_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"adls_source_url": {
+											"value": "@pipeline().globalParameters.adls_source_url",
+											"type": "Expression"
+										},
+										"key_vault_url": {
+											"value": "@pipeline().globalParameters.key_vault_url",
+											"type": "Expression"
+										},
+										"folder_name": {
+											"value": "@item().tableName",
+											"type": "Expression"
+										}
+									}
+								},
+								"fieldList": [
+									"childItems"
+								],
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							}
+						},
+						{
+							"name": "Check If data load needed",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "Filter CSV files",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@greater(length(activity('Filter CSV files').output.Value), 0)",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "Append table metadata",
+										"type": "AppendVariable",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "expected_tables",
+											"value": {
+												"value": "@item()",
+												"type": "Expression"
+											}
+										}
+									}
+								]
+							}
+						},
+						{
+							"name": "Filter CSV files",
+							"type": "Filter",
+							"dependsOn": [
+								{
+									"activity": "Get Metadata of Source Folder",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"items": {
+									"value": "@activity('Get Metadata of Source Folder').output.childItems",
+									"type": "Expression"
+								},
+								"condition": {
+									"value": "@contains(item().name, '.csv')",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"master_tables": {
+				"type": "array",
+				"defaultValue": [
+					{
+						"tableName": "MARA",
+						"tableSchemaName": "dbo",
+						"Watermark_Column": "last_updated"
+					},
+					{
+						"tableName": "VBRK",
+						"tableSchemaName": "dbo",
+						"Watermark_Column": "last_updated"
+					},
+					{
+						"tableName": "VBAP",
+						"tableSchemaName": "dbo",
+						"Watermark_Column": "last_updated"
+					},
+					{
+						"tableName": "VBRK_SPPAYM",
+						"tableSchemaName": "dbo",
+						"Watermark_Column": "last_updated"
+					},
+					{
+						"tableName": "SR01A",
+						"tableSchemaName": "dbo",
+						"Watermark_Column": "last_updated"
+					}
+				]
+			},
+			"load_vbrk_only_flag": {
+				"type": "bool",
+				"defaultValue": false
+			}
+		},
+		"variables": {
+			"expected_tables": {
+				"type": "Array"
+			},
+			"input_tables": {
+				"type": "Array"
+			}
+		},
+		"folder": {
+			"name": "CapStone_Usecase"
+		},
+		"annotations": []
+	}
+}
