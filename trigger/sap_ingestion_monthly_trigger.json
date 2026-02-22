@@ -1,0 +1,42 @@
+{
+	"name": "sap_ingestion_monthly_trigger",
+	"properties": {
+		"description": "Used to trigger every Monday of the month at 6am PST",
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "pl_sap_data_ingestion",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"load_vbrk_only_flag": false
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Month",
+				"interval": 1,
+				"startTime": "2026-02-22T06:10:00",
+				"timeZone": "Pacific Standard Time",
+				"schedule": {
+					"minutes": [
+						0
+					],
+					"hours": [
+						6
+					],
+					"monthlyOccurrences": [
+						{
+							"day": "Monday",
+							"occurrence": 1
+						}
+					]
+				}
+			}
+		}
+	}
+}
