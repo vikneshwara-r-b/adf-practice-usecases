@@ -37,3 +37,4 @@ terraform.rc
 .env.local
 
 *.plan
+.terraform.lock.hcl
